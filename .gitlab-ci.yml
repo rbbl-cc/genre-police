@@ -1,0 +1,35 @@
+stages:
+  - build
+  - docker
+
+cache:
+  paths:
+    - target/genre-police-*.jar
+
+build:
+  stage: build
+  image: maven:3.6.3-jdk-11
+  script:
+    - mvn clean install
+
+docker:
+  stage: docker
+  image: docker:19.03.12
+  services:
+    - docker:19.03.12-dind
+  variables:
+    # Use TLS https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-enabled
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: "/certs"
+
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --tag $CI_REGISTRY_IMAGE:latest .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+    - docker push $CI_REGISTRY_IMAGE:latest
+
+  rules:
+    - if: '$CI_COMMIT_TAG'
