@@ -14,7 +14,7 @@ keys:
 
 
 example:
-> java -jar genre-police-0.1.0.jar DiscordToken=token SpotifyClientId=id SpotifyClientSecret=secret
+> java -jar genre-police-1.0.0.jar DiscordToken=token SpotifyClientId=id SpotifyClientSecret=secret
 ### docker/container
 example:
 > docker run -d --name gp_1.0.0 registry.gitlab.com/rbbl/genre-police:latest DiscordToken=token SpotifyClientId=id SpotifyClientSecret=secret
