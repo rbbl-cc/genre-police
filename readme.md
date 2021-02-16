@@ -20,14 +20,14 @@ keys:
 example:
 
 ```shell
-java -jar genre-police-1.0.0.jar DiscordToken=token SpotifyClientId=id SpotifyClientSecret=secret
+java -jar genre-police-1.0.1.jar DiscordToken=token SpotifyClientId=id SpotifyClientSecret=secret
 ``` 
 
 ### docker/container
 
 example:
 ```shell
-docker run -d --name gp_1.0.0 registry.gitlab.com/rbbl/genre-police:latest DiscordToken=token SpotifyClientId=id SpotifyClientSecret=secret
+docker run -d --name gp_1.0.1 registry.gitlab.com/rbbl/genre-police:latest DiscordToken=token SpotifyClientId=id SpotifyClientSecret=secret
 ```
 
 ### build from source
@@ -39,5 +39,5 @@ requirements :
 
 ```shell
 mvn install
-java -jar target/genre-police-1.0.0.jar DiscordToken=token SpotifyClientId=id SpotifyClientSecret=secret
+java -jar target/genre-police-1.0.1.jar DiscordToken=token SpotifyClientId=id SpotifyClientSecret=secret
 ```

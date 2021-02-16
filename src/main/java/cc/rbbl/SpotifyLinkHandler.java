@@ -1,5 +1,6 @@
 package cc.rbbl;
 
+import cc.rbbl.exceptions.NoGenreFoundException;
 import com.wrapper.spotify.SpotifyApi;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import com.wrapper.spotify.exceptions.detailed.UnauthorizedException;
@@ -26,7 +27,7 @@ public class SpotifyLinkHandler {
         spotifyApi.setAccessToken(clientCredentials.getAccessToken());
     }
 
-    public String[] getGenres(String spotifyLink) {
+    public String[] getGenres(String spotifyLink) throws NoGenreFoundException{
         try {
             String typeSlashId = spotifyLink.split("\\?")[0].replace(spotifyDomain, "");
             switch (typeSlashId.split("/")[0].toLowerCase()) {
@@ -44,11 +45,10 @@ public class SpotifyLinkHandler {
                 return getGenres(spotifyLink);
             }
         }
-
-        return null;
+        throw new NoGenreFoundException();
     }
 
-    private String[] getGenresForTrack(String trackId) throws UnauthorizedException {
+    private String[] getGenresForTrack(String trackId) throws UnauthorizedException, NoGenreFoundException{
         try {
             Track track = spotifyApi.getTrack(trackId).build().execute();
             return getGenresForAlbum(track.getAlbum().getId());
@@ -63,10 +63,10 @@ public class SpotifyLinkHandler {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        return null;
+        throw new NoGenreFoundException();
     }
 
-    private String[] getGenresForAlbum(String albumId) throws UnauthorizedException {
+    private String[] getGenresForAlbum(String albumId) throws UnauthorizedException, NoGenreFoundException {
         try {
             Album album = spotifyApi.getAlbum(albumId).build().execute();
             if (album.getGenres().length != 0) {
@@ -90,10 +90,10 @@ public class SpotifyLinkHandler {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        return null;
+        throw new NoGenreFoundException();
     }
 
-    private String[] getGenresForArtist(String artistId) throws UnauthorizedException {
+    private String[] getGenresForArtist(String artistId) throws UnauthorizedException, NoGenreFoundException {
         try {
             Artist artist = spotifyApi.getArtist(artistId).build().execute();
             if (artist.getGenres().length != 0) {
@@ -110,7 +110,7 @@ public class SpotifyLinkHandler {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        return null;
+        throw new NoGenreFoundException();
     }
 
     private void refreshSpotifyToken() {

@@ -1,5 +1,6 @@
 package cc.rbbl;
 
+import cc.rbbl.exceptions.NoGenreFoundException;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -35,9 +36,13 @@ public class GenrePolice extends ListenerAdapter {
     public void onMessageReceived(MessageReceivedEvent event) {
         Message msg = event.getMessage();
         if (SpotifyLinkHandler.isApplicableMsg(msg.getContentRaw())) {
-            String[] genres = spotifyLinkHandler.getGenres(msg.getContentRaw());
-            if (!emptyOrNull(genres)) {
-                msg.reply(genresToMessage(genres)).queue();
+            String response = "";
+            try {
+                response = genresToMessage(spotifyLinkHandler.getGenres(msg.getContentRaw()));
+            } catch (NoGenreFoundException e) {
+                response = "Spotify has no genre for that Item";
+            }finally {
+                msg.reply(response).queue();
             }
         }
     }
