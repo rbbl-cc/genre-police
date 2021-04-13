@@ -2,7 +2,7 @@
 
 ## about
 
-genre-police is a discord bot, that posts the genres to if a spotify link is posted without any context.
+genre-police is a discord bot, that posts the genres to spotify links that are posted without any context.
 
 ## usage
 
