@@ -6,13 +6,13 @@
 
     <groupId>cc.rbbl</groupId>
     <artifactId>genre-police</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 
     <repositories>
         <repository>
-            <id>jcenter</id>
-            <name>jcenter-bintray</name>
-            <url>https://jcenter.bintray.com</url>
+            <id>dv8tion</id>
+            <name>m2-dv8tion</name>
+            <url>https://m2.dv8tion.net/releases</url>
         </repository>
     </repositories>
 
@@ -20,7 +20,7 @@
         <dependency>
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
-            <version>4.2.0_224</version>
+            <version>4.2.1_265</version>
         </dependency>
         <dependency>
             <groupId>se.michaelthelin.spotify</groupId>
