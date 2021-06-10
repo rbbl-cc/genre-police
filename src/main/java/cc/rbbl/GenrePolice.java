@@ -78,22 +78,20 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         Message msg = event.getMessage();
-        if (SpotifyLinkHandler.isApplicableMsg(msg.getContentRaw())) {
-            String response = "";
-            try {
-                response = genresToMessage(spotifyLinkHandler.getGenres(msg.getContentRaw()));
-            } catch (NoGenreFoundException e) {
-                response = "Spotify has no genre for that Item";
-            } finally {
-                if (response != null) {
-                    msg.reply(response).queue();
-                }
+        String response = null;
+        try {
+            response = genresToMessage(spotifyLinkHandler.getGenres(msg.getContentRaw()));
+        } catch (NoGenreFoundException e) {
+            response = "Spotify has no genre for that Item";
+        } finally {
+            if (response != null) {
+                msg.reply(response).queue();
             }
         }
     }
 
     private String genresToMessage(String[] genres) {
-        if(genres == null) {
+        if (genres == null) {
             return null;
         }
         String message = "Genres: ";

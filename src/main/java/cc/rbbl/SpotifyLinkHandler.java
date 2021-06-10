@@ -12,6 +12,8 @@ import com.wrapper.spotify.model_objects.specification.Track;
 import org.apache.hc.core5.http.ParseException;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SpotifyLinkHandler {
     private final static String SPOTIFY_LINK_PATTERN = "\\bhttps://open.spotify.com/(?:track|album|artist)[^ \\t\\n\\r]*\\b";
@@ -27,22 +29,25 @@ public class SpotifyLinkHandler {
         spotifyApi.setAccessToken(clientCredentials.getAccessToken());
     }
 
-    public String[] getGenres(String spotifyLink) throws NoGenreFoundException{
+    public String[] getGenres(String message) throws NoGenreFoundException{
         try {
-            String typeSlashId = spotifyLink.split("\\?")[0].replace(spotifyDomain, "");
-            switch (typeSlashId.split("/")[0].toLowerCase()) {
-                case "track":
-                    return getGenresForTrack(typeSlashId.split("/")[1]);
-                case "album":
-                    return getGenresForAlbum(typeSlashId.split("/")[1]);
-                case "artist":
-                    return getGenresForArtist(typeSlashId.split("/")[1]);
+            Matcher matcher = Pattern.compile(SPOTIFY_LINK_PATTERN).matcher(message);
+            if (matcher.find() && !message.toLowerCase().contains("genre")) {
+                String typeSlashId = matcher.group().split("\\?")[0].replace(spotifyDomain, "");
+                switch (typeSlashId.split("/")[0].toLowerCase()) {
+                    case "track":
+                        return getGenresForTrack(typeSlashId.split("/")[1]);
+                    case "album":
+                        return getGenresForAlbum(typeSlashId.split("/")[1]);
+                    case "artist":
+                        return getGenresForArtist(typeSlashId.split("/")[1]);
+                }
             }
         } catch (UnauthorizedException e) {
             if (retryCounter < 3) {
                 retryCounter++;
                 refreshSpotifyToken();
-                return getGenres(spotifyLink);
+                return getGenres(message);
             }
         }
         return null;
@@ -125,9 +130,5 @@ public class SpotifyLinkHandler {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-    }
-
-    public static boolean isApplicableMsg(String msgContent) {
-        return msgContent.matches(SPOTIFY_LINK_PATTERN);
     }
 }
