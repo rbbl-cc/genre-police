@@ -85,12 +85,17 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
             } catch (NoGenreFoundException e) {
                 response = "Spotify has no genre for that Item";
             } finally {
-                msg.reply(response).queue();
+                if (response != null) {
+                    msg.reply(response).queue();
+                }
             }
         }
     }
 
     private String genresToMessage(String[] genres) {
+        if(genres == null) {
+            return null;
+        }
         String message = "Genres: ";
         for (String genre : genres) {
             message += "\"" + genre + "\" ";

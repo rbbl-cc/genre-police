@@ -14,7 +14,7 @@ import org.apache.hc.core5.http.ParseException;
 import java.io.IOException;
 
 public class SpotifyLinkHandler {
-    private final static String SPOTIFY_LINK_PATTERN = "\\bhttps://open.spotify.com/[^ \\t\\n\\r]*\\b";
+    private final static String SPOTIFY_LINK_PATTERN = "\\bhttps://open.spotify.com/(?:track|album|artist)[^ \\t\\n\\r]*\\b";
 
     private static final String spotifyDomain = "https://open.spotify.com/";
     private final SpotifyApi spotifyApi;
@@ -45,7 +45,7 @@ public class SpotifyLinkHandler {
                 return getGenres(spotifyLink);
             }
         }
-        throw new NoGenreFoundException();
+        return null;
     }
 
     private String[] getGenresForTrack(String trackId) throws UnauthorizedException, NoGenreFoundException{
