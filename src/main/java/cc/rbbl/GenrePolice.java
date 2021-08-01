@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.net.UnknownHostException;
 
 public class GenrePolice extends ListenerAdapter implements Runnable {
 
@@ -31,6 +30,7 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
 
     public static void main(String[] args) throws LoginException, IllegalArgumentException, ParseException, SpotifyWebApiException, IOException {
         ProgramParameters params = new ProgramParameters(args);
+        params.checkIfParamsComplete();
 
         // We only need 2 intents in this bot. We only respond to messages in guilds and private channels.
         // All other events will be disabled.
