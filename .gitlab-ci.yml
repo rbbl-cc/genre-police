@@ -10,7 +10,7 @@ build:
   stage: build
   image: maven:3.6.3-jdk-11
   script:
-    - mvn install
+    - mvn compile
 
 docker:
   stage: docker
