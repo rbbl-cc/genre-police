@@ -1,6 +1,8 @@
 package cc.rbbl;
 
 import cc.rbbl.exceptions.NoGenreFoundException;
+import cc.rbbl.program_parameters_jvm.ParameterDefinition;
+import cc.rbbl.program_parameters_jvm.ParameterHolder;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -19,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.util.Set;
 
 public class GenrePolice extends ListenerAdapter implements Runnable {
 
@@ -29,19 +32,24 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     private final SpotifyLinkHandler spotifyLinkHandler;
 
     public static void main(String[] args) throws LoginException, IllegalArgumentException, ParseException, SpotifyWebApiException, IOException {
-        ProgramParameters params = new ProgramParameters(args);
-        params.checkIfParamsComplete();
+        ParameterHolder params = new ParameterHolder(Set.of(
+                new ParameterDefinition("DiscordToken", true, false),
+                new ParameterDefinition("SpotifyClientID", true, false),
+                new ParameterDefinition("SpotifyClientSecret", true, false)
+        ));
+        params.loadParametersFromEnvironmentVariables();
+        params.loadParameters(args);
+        params.checkParameterCompleteness();
 
         // We only need 2 intents in this bot. We only respond to messages in guilds and private channels.
         // All other events will be disabled.
-
-        JDABuilder.createLight(params.getDiscordToken(), GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES)
+        JDABuilder.createLight(params.get("DiscordToken"), GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES)
                 .addEventListeners(new GenrePolice(params))
                 .setActivity(Activity.watching("Spotify Links"))
                 .build();
     }
 
-    public GenrePolice(ProgramParameters parameters) throws ParseException, SpotifyWebApiException, IOException {
+    public GenrePolice(ParameterHolder parameters) throws ParseException, SpotifyWebApiException, IOException {
         spotifyLinkHandler = new SpotifyLinkHandler(parameters);
     }
 

@@ -1,6 +1,7 @@
 package cc.rbbl;
 
 import cc.rbbl.exceptions.NoGenreFoundException;
+import cc.rbbl.program_parameters_jvm.ParameterHolder;
 import com.wrapper.spotify.SpotifyApi;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import com.wrapper.spotify.exceptions.detailed.UnauthorizedException;
@@ -22,14 +23,14 @@ public class SpotifyLinkHandler {
     private final SpotifyApi spotifyApi;
     private int retryCounter;
 
-    public SpotifyLinkHandler(ProgramParameters parameters) throws ParseException, SpotifyWebApiException, IOException {
-        spotifyApi = new SpotifyApi.Builder().setClientId(parameters.getSpotifyClientId())
-                .setClientSecret(parameters.getSpotifyClientSecret()).build();
+    public SpotifyLinkHandler(ParameterHolder parameters) throws ParseException, SpotifyWebApiException, IOException {
+        spotifyApi = new SpotifyApi.Builder().setClientId(parameters.get("SpotifyClientID"))
+                .setClientSecret(parameters.get("SpotifyClientSecret")).build();
         ClientCredentials clientCredentials = spotifyApi.clientCredentials().build().execute();
         spotifyApi.setAccessToken(clientCredentials.getAccessToken());
     }
 
-    public String[] getGenres(String message) throws NoGenreFoundException{
+    public String[] getGenres(String message) throws NoGenreFoundException {
         try {
             Matcher matcher = Pattern.compile(SPOTIFY_LINK_PATTERN).matcher(message);
             if (matcher.find() && !message.toLowerCase().contains("genre")) {
@@ -53,7 +54,7 @@ public class SpotifyLinkHandler {
         return null;
     }
 
-    private String[] getGenresForTrack(String trackId) throws UnauthorizedException, NoGenreFoundException{
+    private String[] getGenresForTrack(String trackId) throws UnauthorizedException, NoGenreFoundException {
         try {
             Track track = spotifyApi.getTrack(trackId).build().execute();
             return getGenresForAlbum(track.getAlbum().getId());
