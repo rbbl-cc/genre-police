@@ -2,15 +2,14 @@ stages:
   - build
   - docker
 
-cache:
-  paths:
-    - target/genre-police-*.jar
-
 build:
   stage: build
   image: maven:3.6.3-jdk-11
   script:
-    - mvn compile
+    - mvn install
+  artifacts:
+    paths:
+      - target/genre-police-*.jar
 
 docker:
   stage: docker
