@@ -31,24 +31,6 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(GenrePolice.class);
     private final SpotifyLinkHandler spotifyLinkHandler;
 
-    public static void main(String[] args) throws LoginException, IllegalArgumentException, ParseException, SpotifyWebApiException, IOException {
-        ParameterHolder params = new ParameterHolder(Set.of(
-                new ParameterDefinition("DiscordToken", true, false),
-                new ParameterDefinition("SpotifyClientID", true, false),
-                new ParameterDefinition("SpotifyClientSecret", true, false)
-        ));
-        params.loadParametersFromEnvironmentVariables();
-        params.loadParameters(args);
-        params.checkParameterCompleteness();
-
-        // We only need 2 intents in this bot. We only respond to messages in guilds and private channels.
-        // All other events will be disabled.
-        JDABuilder.createLight(params.get("DiscordToken"), GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES)
-                .addEventListeners(new GenrePolice(params))
-                .setActivity(Activity.watching("Spotify Links"))
-                .build();
-    }
-
     public GenrePolice(ParameterHolder parameters) throws ParseException, SpotifyWebApiException, IOException {
         spotifyLinkHandler = new SpotifyLinkHandler(parameters);
     }
