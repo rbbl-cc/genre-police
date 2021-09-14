@@ -81,7 +81,7 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     }
 
     private String genresToMessage(String[] genres) {
-        if (genres == null) {
+        if (genres == null || genres.length == 0) {
             return null;
         }
         String message = "Genres: ";
