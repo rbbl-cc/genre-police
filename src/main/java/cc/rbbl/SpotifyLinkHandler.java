@@ -24,8 +24,8 @@ public class SpotifyLinkHandler {
     private int retryCounter;
 
     public SpotifyLinkHandler(ParameterHolder parameters) throws ParseException, SpotifyWebApiException, IOException {
-        spotifyApi = new SpotifyApi.Builder().setClientId(parameters.get("SpotifyClientID"))
-                .setClientSecret(parameters.get("SpotifyClientSecret")).build();
+        spotifyApi = new SpotifyApi.Builder().setClientId(parameters.get("SPOTIFY_CLIENT_ID"))
+                .setClientSecret(parameters.get("SPOTIFY_CLIENT_SECRET")).build();
         ClientCredentials clientCredentials = spotifyApi.clientCredentials().build().execute();
         spotifyApi.setAccessToken(clientCredentials.getAccessToken());
     }
