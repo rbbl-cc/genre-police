@@ -1,6 +1,7 @@
 package cc.rbbl;
 
 import cc.rbbl.exceptions.NoGenreFoundException;
+import cc.rbbl.persistence.MessageEntity;
 import cc.rbbl.program_parameters_jvm.ParameterDefinition;
 import cc.rbbl.program_parameters_jvm.ParameterHolder;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
@@ -15,6 +16,9 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.apache.hc.core5.http.ParseException;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,9 +34,11 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     private boolean isConnected = true;
     private static final Logger logger = LoggerFactory.getLogger(GenrePolice.class);
     private final SpotifyLinkHandler spotifyLinkHandler;
+    private final SessionFactory sessionFactory;
 
-    public GenrePolice(ParameterHolder parameters) throws ParseException, SpotifyWebApiException, IOException {
+    public GenrePolice(ParameterHolder parameters, SessionFactory sessionFactory) throws ParseException, SpotifyWebApiException, IOException {
         spotifyLinkHandler = new SpotifyLinkHandler(parameters);
+        this.sessionFactory = sessionFactory;
     }
 
     @Override
@@ -61,7 +67,7 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     @Override
     public void onShutdown(@NotNull ShutdownEvent event) {
         super.onShutdown(event);
-        logger.error("Discord Shutdown Event occurred. Shutting down Process.", event);
+        logger.error("Discord Shutdown Event occurred. Shutting down Process.");
         System.exit(1);
     }
 
@@ -75,7 +81,13 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
             response = "Spotify has no genre for that Item";
         } finally {
             if (response != null) {
-                msg.reply(response).queue();
+                msg.reply(response).queue(message -> {
+                    Session session = sessionFactory.openSession();
+                    Transaction transaction = session.beginTransaction();
+                    session.persist(new MessageEntity(message.getIdLong(), msg.getIdLong()));
+                    transaction.commit();
+                    session.close();
+                });
             }
         }
     }
@@ -84,11 +96,11 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
         if (genres == null || genres.length == 0) {
             return null;
         }
-        String message = "Genres: ";
+        StringBuilder message = new StringBuilder("Genres: ");
         for (String genre : genres) {
-            message += "\"" + genre + "\" ";
+            message.append("\"").append(genre).append("\" ");
         }
-        return message;
+        return message.toString();
     }
 
     @Override
