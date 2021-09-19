@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.events.DisconnectEvent;
 import net.dv8tion.jda.api.events.ReconnectedEvent;
 import net.dv8tion.jda.api.events.ResumedEvent;
 import net.dv8tion.jda.api.events.ShutdownEvent;
+import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -25,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
 public class GenrePolice extends ListenerAdapter implements Runnable {
@@ -89,6 +91,23 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
                     session.close();
                 });
             }
+        }
+    }
+
+    @Override
+    public void onMessageDelete(@NotNull MessageDeleteEvent event) {
+        Session session = sessionFactory.openSession();
+        List<MessageEntity> resultList = session.createQuery("FROM sent_messages WHERE sourceMessageId = " + event.getMessageId(), MessageEntity.class).getResultList();
+        session.close();
+        for(MessageEntity entity : resultList) {
+            event.getChannel().deleteMessageById(entity.getId()).queue(unused -> {
+                Session deleteSession = sessionFactory.openSession();
+                Transaction transaction = deleteSession.beginTransaction();
+                entity.setDeleted(true);
+                deleteSession.update(entity);
+                transaction.commit();
+                deleteSession.close();
+            });
         }
     }
 
