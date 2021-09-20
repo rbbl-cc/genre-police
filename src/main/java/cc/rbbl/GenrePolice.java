@@ -2,11 +2,8 @@ package cc.rbbl;
 
 import cc.rbbl.exceptions.NoGenreFoundException;
 import cc.rbbl.persistence.MessageEntity;
-import cc.rbbl.program_parameters_jvm.ParameterDefinition;
 import cc.rbbl.program_parameters_jvm.ParameterHolder;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
-import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.DisconnectEvent;
 import net.dv8tion.jda.api.events.ReconnectedEvent;
@@ -14,8 +11,9 @@ import net.dv8tion.jda.api.events.ResumedEvent;
 import net.dv8tion.jda.api.events.ShutdownEvent;
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.requests.ErrorResponse;
 import org.apache.hc.core5.http.ParseException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -24,21 +22,22 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 
 public class GenrePolice extends ListenerAdapter implements Runnable {
 
     private static final long RECONNECTION_TIMEOUT = 70000L;
+
+    private final List<ErrorResponse> okErrorResponses = List.of(ErrorResponse.UNKNOWN_MESSAGE, ErrorResponse.UNKNOWN_CHANNEL);
 
     private boolean isConnected = true;
     private static final Logger logger = LoggerFactory.getLogger(GenrePolice.class);
     private final SpotifyLinkHandler spotifyLinkHandler;
     private final SessionFactory sessionFactory;
 
-    public GenrePolice(ParameterHolder parameters, SessionFactory sessionFactory) throws ParseException, SpotifyWebApiException, IOException {
+    public GenrePolice(ParameterHolder parameters, SessionFactory sessionFactory)
+            throws ParseException, SpotifyWebApiException, IOException {
         spotifyLinkHandler = new SpotifyLinkHandler(parameters);
         this.sessionFactory = sessionFactory;
     }
@@ -97,9 +96,11 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     @Override
     public void onMessageDelete(@NotNull MessageDeleteEvent event) {
         Session session = sessionFactory.openSession();
-        List<MessageEntity> resultList = session.createQuery("FROM sent_messages WHERE sourceMessageId = " + event.getMessageId(), MessageEntity.class).getResultList();
+        List<MessageEntity> resultList = session
+                .createQuery("FROM sent_messages WHERE sourceMessageId = " + event.getMessageId(), MessageEntity.class)
+                .getResultList();
         session.close();
-        for(MessageEntity entity : resultList) {
+        for (MessageEntity entity : resultList) {
             event.getChannel().deleteMessageById(entity.getId()).queue(unused -> {
                 Session deleteSession = sessionFactory.openSession();
                 Transaction transaction = deleteSession.beginTransaction();
@@ -107,7 +108,22 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
                 deleteSession.update(entity);
                 transaction.commit();
                 deleteSession.close();
+            }, throwable -> {
+                if (throwable instanceof ErrorResponseException) {
+                    ErrorResponseException exception = (ErrorResponseException) throwable;
+                    if (okErrorResponses.contains(exception.getErrorResponse())) {
+                        Session deleteSession = sessionFactory.openSession();
+                        Transaction transaction = deleteSession.beginTransaction();
+                        entity.setDeleted(true);
+                        deleteSession.update(entity);
+                        transaction.commit();
+                        deleteSession.close();
+                    }
+                } else {
+                    throw new RuntimeException(throwable);
+                }
             });
+
         }
     }
 
