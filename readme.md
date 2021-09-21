@@ -13,21 +13,36 @@ at the moment the tokens can only be passed in as key/value pairs via the progra
 
 keys:
 
-- DiscordToken
-- SpotifyClientID
-- SpotifyClientSecret
+- DISCORD_TOKEN
+- SPOTIFY_CLIENT_ID
+- SPOTIFY_CLIENT_SECRET
+- JDBC_URL
+- DB_USER
+- DB_PASSWORD
 
 example:
 
 ```shell
-java -jar genre-police-1.2.0.jar DiscordToken=token SpotifyClientId=id SpotifyClientSecret=secret
+java -jar genre-police-1.2.1.jar \
+  DISCORD_TOKEN=token \
+  SPOTIFY_CLIENT_ID=id \
+  SPOTIFY_CLIENT_SECRET=secret \
+  JDBC_URL=url \ 
+  DB_USER=userName \
+  DB_PASSWORD=password
 ``` 
 
 ### docker/container
 
 example:
 ```shell
-docker run -d --name gp_1.2.0 registry.gitlab.com/rbbl/genre-police:latest DiscordToken=token SpotifyClientId=id SpotifyClientSecret=secret
+docker run -d --name gp_1.2.1 registry.gitlab.com/rbbl/genre-police:latest \
+  DISCORD_TOKEN=token \
+  SPOTIFY_CLIENT_ID=id \
+  SPOTIFY_CLIENT_SECRET=secret \
+  JDBC_URL=url \ 
+  DB_USER=userName \
+  DB_PASSWORD=password
 ```
 
 ### build from source
@@ -35,9 +50,17 @@ docker run -d --name gp_1.2.0 registry.gitlab.com/rbbl/genre-police:latest Disco
 requirements :
 
 - jdk11
-- maven example:
+- maven
+
+example:
 
 ```shell
 mvn install
-java -jar target/genre-police-1.2.0.jar DiscordToken=token SpotifyClientId=id SpotifyClientSecret=secret
+java -jar target/genre-police-1.2.1.jar \
+  DISCORD_TOKEN=token \
+  SPOTIFY_CLIENT_ID=id \
+  SPOTIFY_CLIENT_SECRET=secret \
+  JDBC_URL=url \ 
+  DB_USER=userName \
+  DB_PASSWORD=password
 ```
