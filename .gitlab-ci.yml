@@ -4,12 +4,12 @@ stages:
 
 build:
   stage: build
-  image: maven:3.6.3-jdk-11
+  image: gradle:7.2.0-jdk11
   script:
-    - mvn install
+    - gradle build
   artifacts:
     paths:
-      - target/genre-police-*.jar
+      - build/libs/genre-police-*-all.jar
 
 docker:
   stage: docker
