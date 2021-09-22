@@ -1,5 +1,5 @@
-/target
-dependency-reduced-pom.xml
+/build
+/.gradle
 
 #IDEA
 .idea/**/uiDesigner.xml

@@ -1,4 +1,4 @@
 FROM openjdk:11
 
-COPY target/genre-police-*.jar app.jar
-ENTRYPOINT ["java","-jar","/app.jar"]
+COPY build/libs/genre-police-*-all.jar genre-police.jar
+ENTRYPOINT ["java","-jar","/genre-police.jar"]
