@@ -50,12 +50,11 @@ docker run -d --name gp_1.2.1 registry.gitlab.com/rbbl/genre-police:latest \
 requirements :
 
 - jdk11
-- maven
 
 example:
 
 ```shell
-mvn install
+./gradlew build
 java -jar target/genre-police-1.2.1.jar \
   DISCORD_TOKEN=token \
   SPOTIFY_CLIENT_ID=id \
