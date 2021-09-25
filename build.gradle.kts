@@ -2,6 +2,7 @@ val logback_version: String by project
 
 plugins {
     java
+    kotlin("jvm") version "1.5.31"
     application
     id("com.github.johnrengelman.shadow") version "7.0.0"
 }
@@ -20,10 +21,14 @@ application {
     mainClass.set("cc.rbbl.Main")
 }
 
+sourceSets.main {
+    java.srcDirs("src/main/java")
+}
+
 dependencies {
     implementation("cc.rbbl:program-parameters-jvm:1.0.3")
     implementation("net.dv8tion:JDA:4.2.1_265")
-    implementation("se.michaelthelin.spotify:spotify-web-api-java:6.5.1")
+    implementation("se.michaelthelin.spotify:spotify-web-api-java:6.5.4")
 
     //Percistence
     implementation("org.postgresql:postgresql:42.2.23")
@@ -31,10 +36,10 @@ dependencies {
     implementation("org.flywaydb:flyway-core:7.15.0")
 
     //LOGGING
-    implementation("ch.qos.logback:logback-classic:1.2.3")
+    implementation("ch.qos.logback:logback-classic:1.2.6")
 
     //Testing
-    testImplementation("org.junit.jupiter:junit-jupiter:5.7.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.8.0")
 }
 
 tasks.getByName<Test>("test") {

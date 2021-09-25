@@ -4,7 +4,7 @@
     <module name="genre-police.main" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="cc.rbbl.*" />
+        <option name="PATTERN" value="cc.rbbl.link_handlers.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>

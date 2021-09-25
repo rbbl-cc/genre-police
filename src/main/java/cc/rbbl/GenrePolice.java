@@ -1,6 +1,6 @@
 package cc.rbbl;
 
-import cc.rbbl.exceptions.NoGenreFoundException;
+import cc.rbbl.link_handlers.SpotifyMessageHandler;
 import cc.rbbl.persistence.MessageEntity;
 import cc.rbbl.program_parameters_jvm.ParameterHolder;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
@@ -23,7 +23,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class GenrePolice extends ListenerAdapter implements Runnable {
 
@@ -33,12 +37,12 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
 
     private boolean isConnected = true;
     private static final Logger logger = LoggerFactory.getLogger(GenrePolice.class);
-    private final SpotifyLinkHandler spotifyLinkHandler;
+    private final MessageHandler[] messageHandlers;
     private final SessionFactory sessionFactory;
 
     public GenrePolice(ParameterHolder parameters, SessionFactory sessionFactory)
             throws ParseException, SpotifyWebApiException, IOException {
-        spotifyLinkHandler = new SpotifyLinkHandler(parameters);
+        messageHandlers = new MessageHandler[]{new SpotifyMessageHandler(parameters)};
         this.sessionFactory = sessionFactory;
     }
 
@@ -75,21 +79,18 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         Message msg = event.getMessage();
-        String response = null;
-        try {
-            response = genresToMessage(spotifyLinkHandler.getGenres(msg.getContentRaw()));
-        } catch (NoGenreFoundException e) {
-            response = "Spotify has no genre for that Item";
-        } finally {
-            if (response != null) {
-                msg.reply(response).queue(message -> {
-                    Session session = sessionFactory.openSession();
-                    Transaction transaction = session.beginTransaction();
-                    session.persist(new MessageEntity(message.getIdLong(), msg.getIdLong()));
-                    transaction.commit();
-                    session.close();
-                });
-            }
+        ArrayList<GenreResponse> responses = new ArrayList<>();
+        for(MessageHandler handler : messageHandlers) {
+                responses.addAll(handler.getGenreResponses(msg.getContentRaw()));
+        }
+        if (responses.size() > 0) {
+            msg.reply(responsesToMessage(responses)).queue(message -> {
+                Session session = sessionFactory.openSession();
+                Transaction transaction = session.beginTransaction();
+                session.persist(new MessageEntity(message.getIdLong(), msg.getIdLong()));
+                transaction.commit();
+                session.close();
+            });
         }
     }
 
@@ -127,17 +128,6 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
         }
     }
 
-    private String genresToMessage(String[] genres) {
-        if (genres == null || genres.length == 0) {
-            return null;
-        }
-        StringBuilder message = new StringBuilder("Genres: ");
-        for (String genre : genres) {
-            message.append("\"").append(genre).append("\" ");
-        }
-        return message.toString();
-    }
-
     @Override
     public void run() {
         try {
@@ -152,5 +142,15 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
                 System.exit(1);
             }
         }
+    }
+
+    private String responsesToMessage(List<GenreResponse> responseSet) {
+        StringBuilder message = new StringBuilder("Following Genres got found:\n");
+        responseSet = responseSet.stream().distinct().collect(Collectors.toList());
+        for(GenreResponse response : responseSet) {
+            message.append(response.getTitle()).append(": ").append(response.getGenres()).append("\n");
+        }
+
+        return message.toString();
     }
 }
