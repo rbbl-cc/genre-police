@@ -31,7 +31,7 @@ dependencies {
     implementation("se.michaelthelin.spotify:spotify-web-api-java:6.5.4")
 
     //Percistence
-    implementation("org.postgresql:postgresql:42.2.23")
+    implementation("org.postgresql:postgresql:42.2.24")
     implementation("org.hibernate:hibernate-core:5.5.7.Final")
     implementation("org.flywaydb:flyway-core:7.15.0")
 
@@ -39,7 +39,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.2.6")
 
     //Testing
-    testImplementation("org.junit.jupiter:junit-jupiter:5.8.0")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
 }
 
 tasks.getByName<Test>("test") {
