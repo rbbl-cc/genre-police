@@ -1,9 +1,5 @@
-package cc.rbbl;
+package cc.rbbl
 
-import cc.rbbl.exceptions.NoGenreFoundException;
-
-import java.util.Set;
-
-public interface MessageHandler {
-    Set<GenreResponse> getGenreResponses(String message);
+interface MessageHandler {
+    fun getGenreResponses(message: String): Set<GenreResponse>
 }

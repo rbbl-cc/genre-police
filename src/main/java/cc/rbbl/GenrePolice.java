@@ -3,7 +3,6 @@ package cc.rbbl;
 import cc.rbbl.link_handlers.SpotifyMessageHandler;
 import cc.rbbl.persistence.MessageEntity;
 import cc.rbbl.program_parameters_jvm.ParameterHolder;
-import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.DisconnectEvent;
 import net.dv8tion.jda.api.events.ReconnectedEvent;
@@ -14,7 +13,6 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.ErrorResponse;
-import org.apache.hc.core5.http.ParseException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -22,11 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class GenrePolice extends ListenerAdapter implements Runnable {
@@ -40,8 +35,7 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     private final MessageHandler[] messageHandlers;
     private final SessionFactory sessionFactory;
 
-    public GenrePolice(ParameterHolder parameters, SessionFactory sessionFactory)
-            throws ParseException, SpotifyWebApiException, IOException {
+    public GenrePolice(ParameterHolder parameters, SessionFactory sessionFactory) {
         messageHandlers = new MessageHandler[]{new SpotifyMessageHandler(parameters)};
         this.sessionFactory = sessionFactory;
     }
@@ -80,8 +74,8 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     public void onMessageReceived(MessageReceivedEvent event) {
         Message msg = event.getMessage();
         ArrayList<GenreResponse> responses = new ArrayList<>();
-        for(MessageHandler handler : messageHandlers) {
-                responses.addAll(handler.getGenreResponses(msg.getContentRaw()));
+        for (MessageHandler handler : messageHandlers) {
+            responses.addAll(handler.getGenreResponses(msg.getContentRaw()));
         }
         if (responses.size() > 0) {
             msg.reply(responsesToMessage(responses)).queue(message -> {
@@ -147,7 +141,7 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     private String responsesToMessage(List<GenreResponse> responseSet) {
         StringBuilder message = new StringBuilder("Following Genres got found:\n");
         responseSet = responseSet.stream().distinct().collect(Collectors.toList());
-        for(GenreResponse response : responseSet) {
+        for (GenreResponse response : responseSet) {
             message.append(response.getTitle()).append(": ").append(response.getGenres()).append("\n");
         }
 

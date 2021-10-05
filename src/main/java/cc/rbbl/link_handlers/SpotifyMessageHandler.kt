@@ -1,160 +1,148 @@
-package cc.rbbl.link_handlers;
+package cc.rbbl.link_handlers
 
-import cc.rbbl.GenreResponse;
-import cc.rbbl.MessageHandler;
-import cc.rbbl.exceptions.NoGenreFoundException;
-import cc.rbbl.program_parameters_jvm.ParameterHolder;
-import com.wrapper.spotify.SpotifyApi;
-import com.wrapper.spotify.exceptions.SpotifyWebApiException;
-import com.wrapper.spotify.exceptions.detailed.UnauthorizedException;
-import com.wrapper.spotify.model_objects.credentials.ClientCredentials;
-import com.wrapper.spotify.model_objects.specification.Album;
-import com.wrapper.spotify.model_objects.specification.Artist;
-import com.wrapper.spotify.model_objects.specification.ArtistSimplified;
-import com.wrapper.spotify.model_objects.specification.Track;
-import org.apache.hc.core5.http.ParseException;
+import cc.rbbl.GenreResponse
+import cc.rbbl.MessageHandler
+import cc.rbbl.exceptions.NoGenreFoundException
+import cc.rbbl.program_parameters_jvm.ParameterHolder
+import com.wrapper.spotify.SpotifyApi
+import com.wrapper.spotify.exceptions.SpotifyWebApiException
+import com.wrapper.spotify.exceptions.detailed.UnauthorizedException
+import org.apache.hc.core5.http.ParseException
+import java.io.IOException
+import java.util.regex.Pattern
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+class SpotifyMessageHandler(parameters: ParameterHolder) : MessageHandler {
+    private val spotifyApi: SpotifyApi
+    private var retryCounter = 0
 
-public class SpotifyMessageHandler implements MessageHandler {
-    private final static String SPOTIFY_LINK_PATTERN = "\\bhttps://open.spotify.com/(?:track|album|artist)[^ \\t\\n\\r]*\\b";
-
-    private static final String spotifyDomain = "https://open.spotify.com/";
-    private final SpotifyApi spotifyApi;
-    private int retryCounter;
-
-    public SpotifyMessageHandler(ParameterHolder parameters) throws ParseException, SpotifyWebApiException, IOException {
-        spotifyApi = new SpotifyApi.Builder().setClientId(parameters.get("SPOTIFY_CLIENT_ID"))
-                .setClientSecret(parameters.get("SPOTIFY_CLIENT_SECRET")).build();
-        ClientCredentials clientCredentials = spotifyApi.clientCredentials().build().execute();
-        spotifyApi.setAccessToken(clientCredentials.getAccessToken());
-    }
-
-    @Override
-    public Set<GenreResponse> getGenreResponses(String message) {
+    override fun getGenreResponses(message: String): Set<GenreResponse> {
         try {
-            HashSet<GenreResponse> results = new HashSet<>();
-            Matcher matcher = Pattern.compile(SPOTIFY_LINK_PATTERN).matcher(message);
-            if (!message.toLowerCase().contains("genre")) {
+            val results = HashSet<GenreResponse>()
+            val matcher = Pattern.compile(SPOTIFY_LINK_PATTERN).matcher(message)
+            if (!message.lowercase().contains("genre")) {
                 while (matcher.find()) {
                     try {
-                        String typeSlashId = matcher.group().split("\\?")[0].replace(spotifyDomain, "");
-                        switch (typeSlashId.split("/")[0].toLowerCase()) {
-                            case "track":
-                                results.add(getGenresForTrack(typeSlashId.split("/")[1]));
-                                break;
-                            case "album":
-                                results.add(getGenresForAlbum(typeSlashId.split("/")[1], null));
-                                break;
-                            case "artist":
-                                results.add(getGenresForArtist(typeSlashId.split("/")[1], null));
-                                break;
+                        val typeSlashId = matcher.group().split("\\?").toTypedArray()[0].replace(spotifyDomain, "")
+                        when (typeSlashId.split("/").toTypedArray()[0].lowercase()) {
+                            "track" -> results.add(
+                                getGenresForTrack(typeSlashId.split("/").toTypedArray()[1])!!
+                            )
+                            "album" -> results.add(getGenresForAlbum(typeSlashId.split("/").toTypedArray()[1], null))
+                            "artist" -> results.add(getGenresForArtist(typeSlashId.split("/").toTypedArray()[1], null))
                         }
-                    } catch (NoGenreFoundException e) {
-                        results.add(new GenreResponse(e.getItemName(), "Spotify has no genre for that Item"));
+                    } catch (e: NoGenreFoundException) {
+                        results.add(GenreResponse(e.itemName, "Spotify has no genre for that Item"))
                     }
                 }
             }
-            return results;
-        } catch (UnauthorizedException e) {
+            return results
+        } catch (e: UnauthorizedException) {
             if (retryCounter < 3) {
-                retryCounter++;
-                refreshSpotifyToken();
-                return getGenreResponses(message);
+                retryCounter++
+                refreshSpotifyToken()
+                return getGenreResponses(message)
             }
         }
-        throw new UnknownError();
+        throw UnknownError()
     }
 
-    private GenreResponse getGenresForTrack(String trackId) throws UnauthorizedException, NoGenreFoundException {
+    private fun getGenresForTrack(trackId: String): GenreResponse? {
         try {
-            Track track = spotifyApi.getTrack(trackId).build().execute();
-            return getGenresForAlbum(track.getAlbum().getId(), track.getName());
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (SpotifyWebApiException e) {
-            if (e instanceof UnauthorizedException) {
-                throw (UnauthorizedException) e;
+            val track = spotifyApi.getTrack(trackId).build().execute()
+            return getGenresForAlbum(track.album.id, track.name)
+        } catch (e: IOException) {
+            e.printStackTrace()
+        } catch (e: SpotifyWebApiException) {
+            if (e is UnauthorizedException) {
+                throw e
             } else {
-                e.printStackTrace();
+                e.printStackTrace()
             }
-        } catch (ParseException e) {
-            e.printStackTrace();
+        } catch (e: ParseException) {
+            e.printStackTrace()
         }
-        return null;
+        return null
     }
 
-    private GenreResponse getGenresForAlbum(String albumId, String title) throws UnauthorizedException, NoGenreFoundException {
+    private fun getGenresForAlbum(albumId: String, title: String?): GenreResponse {
         try {
-            Album album = spotifyApi.getAlbum(albumId).build().execute();
-            if (album.getGenres().length != 0) {
-                return new GenreResponse(title, genresToMessage(album.getGenres()));
+            val album = spotifyApi.getAlbum(albumId).build().execute()
+            if (album.genres.isNotEmpty()) {
+                return GenreResponse(title!!, genresToMessage(album.genres)!!)
             } else {
-                for (ArtistSimplified artistSimplified : album.getArtists()) {
-                    return getGenresForArtist(artistSimplified.getId(), title == null ? album.getName() : title);
+                for (artistSimplified in album.artists) {
+                    return getGenresForArtist(artistSimplified.id, title ?: album.name)
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (SpotifyWebApiException e) {
-            if (e instanceof UnauthorizedException) {
-                throw (UnauthorizedException) e;
+        } catch (e: IOException) {
+            e.printStackTrace()
+        } catch (e: SpotifyWebApiException) {
+            if (e is UnauthorizedException) {
+                throw e
             } else {
-                e.printStackTrace();
+                e.printStackTrace()
             }
-        } catch (ParseException e) {
-            e.printStackTrace();
+        } catch (e: ParseException) {
+            e.printStackTrace()
         }
-        throw new UnknownError();
+        throw UnknownError()
     }
 
-    private GenreResponse getGenresForArtist(String artistId, String title) throws UnauthorizedException, NoGenreFoundException {
+    private fun getGenresForArtist(artistId: String, title: String?): GenreResponse {
         try {
-            Artist artist = spotifyApi.getArtist(artistId).build().execute();
-            if (artist.getGenres().length != 0) {
-                return new GenreResponse(title == null ? artist.getName() : title, genresToMessage(artist.getGenres()));
+            val artist = spotifyApi.getArtist(artistId).build().execute()
+            if (artist.genres.isNotEmpty()) {
+                return GenreResponse(title ?: artist.name, genresToMessage(artist.genres)!!)
             }
-            throw new NoGenreFoundException(title == null ? artist.getName() : title);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (SpotifyWebApiException e) {
-            if (e instanceof UnauthorizedException) {
-                throw (UnauthorizedException) e;
+            throw NoGenreFoundException(title ?: artist.name)
+        } catch (e: IOException) {
+            e.printStackTrace()
+        } catch (e: SpotifyWebApiException) {
+            if (e is UnauthorizedException) {
+                throw e
             } else {
-                e.printStackTrace();
+                e.printStackTrace()
             }
-        } catch (ParseException e) {
-            e.printStackTrace();
+        } catch (e: ParseException) {
+            e.printStackTrace()
         }
-        throw new UnknownError();
+        throw UnknownError()
     }
 
-    private void refreshSpotifyToken() {
+    private fun refreshSpotifyToken() {
         try {
-            ClientCredentials clientCredentials = spotifyApi.clientCredentials().build().execute();
-            spotifyApi.setAccessToken(clientCredentials.getAccessToken());
-            retryCounter = 0;
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (SpotifyWebApiException e) {
-            e.printStackTrace();
-        } catch (ParseException e) {
-            e.printStackTrace();
+            val clientCredentials = spotifyApi.clientCredentials().build().execute()
+            spotifyApi.accessToken = clientCredentials.accessToken
+            retryCounter = 0
+        } catch (e: IOException) {
+            e.printStackTrace()
+        } catch (e: SpotifyWebApiException) {
+            e.printStackTrace()
+        } catch (e: ParseException) {
+            e.printStackTrace()
         }
     }
 
-    private String genresToMessage(String[] genres) {
-        if (genres == null || genres.length == 0) {
-            return null;
+    private fun genresToMessage(genres: Array<String>?): String? {
+        if (genres == null || genres.isEmpty()) {
+            return null
         }
-        StringBuilder message = new StringBuilder();
-        for (String genre : genres) {
-            message.append("\"").append(genre).append("\" ");
+        val message = StringBuilder()
+        for (genre in genres) {
+            message.append("\"").append(genre).append("\" ")
         }
-        return message.toString();
+        return message.toString()
+    }
+
+    companion object {
+        private const val SPOTIFY_LINK_PATTERN = "\\bhttps://open.spotify.com/(?:track|album|artist)[^ \\t\\n\\r]*\\b"
+        private const val spotifyDomain = "https://open.spotify.com/"
+    }
+
+    init {
+        spotifyApi = SpotifyApi.Builder().setClientId(parameters["SPOTIFY_CLIENT_ID"])
+            .setClientSecret(parameters["SPOTIFY_CLIENT_SECRET"]).build()
+        val clientCredentials = spotifyApi.clientCredentials().build().execute()
+        spotifyApi.accessToken = clientCredentials.accessToken
     }
 }
