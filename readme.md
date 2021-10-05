@@ -23,7 +23,7 @@ keys:
 example:
 
 ```shell
-java -jar genre-police-1.2.1.jar \
+java -jar genre-police-1.3.0.jar \
   DISCORD_TOKEN=token \
   SPOTIFY_CLIENT_ID=id \
   SPOTIFY_CLIENT_SECRET=secret \
@@ -36,7 +36,7 @@ java -jar genre-police-1.2.1.jar \
 
 example:
 ```shell
-docker run -d --name gp_1.2.1 registry.gitlab.com/rbbl/genre-police:latest \
+docker run -d --name gp_1.3.0 registry.gitlab.com/rbbl/genre-police:latest \
   DISCORD_TOKEN=token \
   SPOTIFY_CLIENT_ID=id \
   SPOTIFY_CLIENT_SECRET=secret \
@@ -55,7 +55,7 @@ example:
 
 ```shell
 ./gradlew build
-java -jar target/genre-police-1.2.1.jar \
+java -jar target/genre-police-1.3.0.jar \
   DISCORD_TOKEN=token \
   SPOTIFY_CLIENT_ID=id \
   SPOTIFY_CLIENT_SECRET=secret \

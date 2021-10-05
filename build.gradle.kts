@@ -1,5 +1,3 @@
-val logback_version: String by project
-
 plugins {
     java
     kotlin("jvm") version "1.5.31"
@@ -8,7 +6,7 @@ plugins {
 }
 
 group = "cc.rbbl"
-version = "1.2.1"
+version = "1.3.0"
 
 repositories {
     mavenCentral()
@@ -30,7 +28,7 @@ dependencies {
     implementation("net.dv8tion:JDA:4.2.1_265")
     implementation("se.michaelthelin.spotify:spotify-web-api-java:6.5.4")
 
-    //Percistence
+    //Persistence
     implementation("org.postgresql:postgresql:42.2.24")
     implementation("org.hibernate:hibernate-core:5.5.7.Final")
     implementation("org.flywaydb:flyway-core:7.15.0")
