@@ -142,7 +142,15 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
         StringBuilder message = new StringBuilder("Following Genres got found:\n");
         responseSet = responseSet.stream().distinct().collect(Collectors.toList());
         for (GenreResponse response : responseSet) {
-            message.append(response.getTitle()).append(": ").append(response.getGenres()).append("\n");
+            message.append(response.getTitle()).append(":");
+            if(response.getNoGenresFound()) {
+                message.append(" Spotify has no genre for that Item");
+            }else {
+                for (String genre : response.getGenres()) {
+                    message.append(" \"").append(genre).append("\"");
+                }
+            }
+            message.append("\n");
         }
 
         return message.toString();

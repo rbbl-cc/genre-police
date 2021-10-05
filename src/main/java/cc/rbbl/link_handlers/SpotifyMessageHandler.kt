@@ -31,7 +31,7 @@ class SpotifyMessageHandler(parameters: ParameterHolder) : MessageHandler {
                             "artist" -> results.add(getGenresForArtist(typeSlashId.split("/").toTypedArray()[1], null))
                         }
                     } catch (e: NoGenreFoundException) {
-                        results.add(GenreResponse(e.itemName, "Spotify has no genre for that Item"))
+                        results.add(GenreResponse(e.itemName, listOf(), true))
                     }
                 }
             }
@@ -68,7 +68,7 @@ class SpotifyMessageHandler(parameters: ParameterHolder) : MessageHandler {
         try {
             val album = spotifyApi.getAlbum(albumId).build().execute()
             if (album.genres.isNotEmpty()) {
-                return GenreResponse(title!!, genresToMessage(album.genres)!!)
+                return GenreResponse(title!!, album.genres.toList())
             } else {
                 for (artistSimplified in album.artists) {
                     return getGenresForArtist(artistSimplified.id, title ?: album.name)
@@ -92,7 +92,7 @@ class SpotifyMessageHandler(parameters: ParameterHolder) : MessageHandler {
         try {
             val artist = spotifyApi.getArtist(artistId).build().execute()
             if (artist.genres.isNotEmpty()) {
-                return GenreResponse(title ?: artist.name, genresToMessage(artist.genres)!!)
+                return GenreResponse(title ?: artist.name, artist.genres.toList())
             }
             throw NoGenreFoundException(title ?: artist.name)
         } catch (e: IOException) {
@@ -121,17 +121,6 @@ class SpotifyMessageHandler(parameters: ParameterHolder) : MessageHandler {
         } catch (e: ParseException) {
             e.printStackTrace()
         }
-    }
-
-    private fun genresToMessage(genres: Array<String>?): String? {
-        if (genres == null || genres.isEmpty()) {
-            return null
-        }
-        val message = StringBuilder()
-        for (genre in genres) {
-            message.append("\"").append(genre).append("\" ")
-        }
-        return message.toString()
     }
 
     companion object {
