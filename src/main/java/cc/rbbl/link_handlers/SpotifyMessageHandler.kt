@@ -22,7 +22,7 @@ class SpotifyMessageHandler(parameters: ParameterHolder) : MessageHandler {
             if (!message.lowercase().contains("genre")) {
                 while (matcher.find()) {
                     try {
-                        val typeSlashId = matcher.group().split("\\?").toTypedArray()[0].replace(spotifyDomain, "")
+                        val typeSlashId = matcher.group().split("?")[0].replace(spotifyDomain, "")
                         when (typeSlashId.split("/").toTypedArray()[0].lowercase()) {
                             "track" -> results.add(
                                 getGenresForTrack(typeSlashId.split("/").toTypedArray()[1])!!
