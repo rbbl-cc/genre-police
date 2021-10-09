@@ -1,6 +1,7 @@
 package cc.rbbl;
 
 import cc.rbbl.exceptions.NoGenreFoundException;
+import cc.rbbl.exceptions.ParsingException;
 import cc.rbbl.link_handlers.SpotifyMessageHandler;
 import cc.rbbl.persistence.MessageEntity;
 import cc.rbbl.program_parameters_jvm.ParameterHolder;
@@ -149,8 +150,10 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
                     message.append(" Spotify has no genre for that Item");
                 } else if (response.getError() instanceof IllegalArgumentException) {
                     message.append(" unknown ID");
-                } else {
+                } else if(response.getError() instanceof ParsingException) {
                     message.append(" broken Link");
+                } else {
+                    message.append(" unknown Error");
                 }
             }else {
                 for (String genre : response.getGenres()) {
