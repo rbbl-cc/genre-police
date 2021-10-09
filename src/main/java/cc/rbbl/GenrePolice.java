@@ -1,5 +1,6 @@
 package cc.rbbl;
 
+import cc.rbbl.exceptions.NoGenreFoundException;
 import cc.rbbl.link_handlers.SpotifyMessageHandler;
 import cc.rbbl.persistence.MessageEntity;
 import cc.rbbl.program_parameters_jvm.ParameterHolder;
@@ -31,7 +32,7 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     private final List<ErrorResponse> okErrorResponses = List.of(ErrorResponse.UNKNOWN_MESSAGE, ErrorResponse.UNKNOWN_CHANNEL);
 
     private boolean isConnected = true;
-    private static final Logger logger = LoggerFactory.getLogger(GenrePolice.class);
+    private static final Logger log = LoggerFactory.getLogger(GenrePolice.class);
     private final MessageHandler[] messageHandlers;
     private final SessionFactory sessionFactory;
 
@@ -45,7 +46,7 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
         super.onDisconnect(event);
         isConnected = false;
         Thread thread = new Thread(this);
-        logger.error("Disconnected. Starting reconnect timeout of " + RECONNECTION_TIMEOUT + " mills");
+        log.error("Disconnected. Starting reconnect timeout of " + RECONNECTION_TIMEOUT + " mills");
         thread.start();
     }
 
@@ -53,20 +54,20 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     public void onReconnected(@NotNull ReconnectedEvent event) {
         super.onReconnected(event);
         isConnected = true;
-        logger.info("Reconnected!");
+        log.info("Reconnected!");
     }
 
     @Override
     public void onResumed(@NotNull ResumedEvent event) {
         super.onResumed(event);
         isConnected = true;
-        logger.info("Reconnected!");
+        log.info("Reconnected!");
     }
 
     @Override
     public void onShutdown(@NotNull ShutdownEvent event) {
         super.onShutdown(event);
-        logger.error("Discord Shutdown Event occurred. Shutting down Process.");
+        log.error("Discord Shutdown Event occurred. Shutting down Process.");
         System.exit(1);
     }
 
@@ -127,12 +128,12 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
         try {
             Thread.sleep(RECONNECTION_TIMEOUT);
             if (!isConnected) {
-                logger.error("Shutting down after waiting " + RECONNECTION_TIMEOUT + " mills to reconnect.");
+                log.error("Shutting down after waiting " + RECONNECTION_TIMEOUT + " mills to reconnect.");
                 System.exit(1);
             }
         } catch (InterruptedException e) {
             if (!isConnected) {
-                logger.error("Reconnection Thread interrupted. Shutting down immediately.", e);
+                log.error("Reconnection Thread interrupted. Shutting down immediately.", e);
                 System.exit(1);
             }
         }
@@ -143,9 +144,15 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
         responseSet = responseSet.stream().distinct().collect(Collectors.toList());
         for (GenreResponse response : responseSet) {
             message.append("**").append(response.getTitle()).append("**").append(":");
-            if (response.getNoGenresFound()) {
-                message.append(" Spotify has no genre for that Item");
-            } else {
+            if(response.getError() != null) {
+                if (response.getError() instanceof NoGenreFoundException) {
+                    message.append(" Spotify has no genre for that Item");
+                } else if (response.getError() instanceof IllegalArgumentException) {
+                    message.append(" unknown ID");
+                } else {
+                    message.append(" broken Link");
+                }
+            }else {
                 for (String genre : response.getGenres()) {
                     message.append(" \"").append(genre).append("\"");
                 }

@@ -24,9 +24,11 @@ sourceSets.main {
 }
 
 dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
+
     implementation("cc.rbbl:program-parameters-jvm:1.0.3")
     implementation("net.dv8tion:JDA:4.2.1_265")
-    implementation("se.michaelthelin.spotify:spotify-web-api-java:6.5.4")
+    implementation("com.adamratzman:spotify-api-kotlin-core:3.8.3")
 
     //Persistence
     implementation("org.postgresql:postgresql:42.2.24")

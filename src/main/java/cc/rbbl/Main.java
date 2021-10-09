@@ -3,20 +3,17 @@ package cc.rbbl;
 import cc.rbbl.persistence.MessageEntity;
 import cc.rbbl.program_parameters_jvm.ParameterDefinition;
 import cc.rbbl.program_parameters_jvm.ParameterHolder;
-import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-import org.apache.hc.core5.http.ParseException;
 import org.flywaydb.core.Flyway;
 import org.hibernate.cfg.Configuration;
 
 import javax.security.auth.login.LoginException;
-import java.io.IOException;
 import java.util.Set;
 
 public class Main {
-    public static void main(String[] args) throws LoginException, IllegalArgumentException, ParseException, SpotifyWebApiException, IOException {
+    public static void main(String[] args) throws LoginException, IllegalArgumentException {
         ParameterHolder params = new ParameterHolder(Set.of(
                 new ParameterDefinition("DISCORD_TOKEN", true, false),
                 new ParameterDefinition("SPOTIFY_CLIENT_ID", true, false),
