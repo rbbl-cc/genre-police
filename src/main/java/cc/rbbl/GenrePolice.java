@@ -86,6 +86,7 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
                 session.persist(new MessageEntity(message.getIdLong(), msg.getIdLong()));
                 transaction.commit();
                 session.close();
+                log.info("Send Message " + message.getId());
             });
         }
     }
