@@ -86,7 +86,7 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
             msg.reply(responsesToMessage(responses)).queue(sendMessage -> {
                 EntityManager entityManager = entityManagerFactory.createEntityManager();
                 entityManager.getTransaction().begin();
-                entityManager.persist(new MessageEntity(sendMessage.getIdLong(), msg.getIdLong(), msg.getAuthor().getIdLong()));
+                entityManager.persist(new MessageEntity(sendMessage.getIdLong(), msg.getIdLong(), msg.getAuthor().getIdLong(), false));
                 entityManager.getTransaction().commit();
                 entityManager.close();
                 sendMessage.addReaction(DELETE_REACTION).queue();
@@ -102,6 +102,7 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
             MessageEntity entity = entityManager.find(MessageEntity.class, event.getMessageIdLong());
             entityManager.close();
             if (entity != null && entity.getSourceMessageAuthor() == event.getUserIdLong()) {
+                log.info("Deleting Message " + entity.getId());
                 event.retrieveMessage().queue(message -> message.delete().queue(unused -> {
                             EntityManager deleteEntityManager = entityManagerFactory.createEntityManager();
                             deleteEntityManager.getTransaction().begin();
@@ -123,6 +124,7 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
                 .getResultList();
         entityManager.close();
         for (MessageEntity entity : resultList) {
+            log.info("Deleting Message " + entity.getId());
             event.getChannel().deleteMessageById(entity.getId()).queue(unused -> {
                 EntityManager deleteEntityManager = entityManagerFactory.createEntityManager();
                 deleteEntityManager.getTransaction().begin();

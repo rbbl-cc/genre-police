@@ -1,71 +1,20 @@
-package cc.rbbl.persistence;
+package cc.rbbl.persistence
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.Column
+import javax.persistence.Entity
+import javax.persistence.Id
 
 @Entity(name = "sent_messages")
-public class MessageEntity {
-
+data class MessageEntity(
     @Id
-    private long id;
+    val id: Long = 0,
 
     @Column(name = "source_message_id")
-    private long sourceMessageId;
-
-    @Column
-    private boolean deleted;
+    val sourceMessageId: Long = 0,
 
     @Column(name = "source_message_author")
-    private long sourceMessageAuthor;
+    val sourceMessageAuthor: Long = 0,
 
-    protected MessageEntity(){
-    }
-
-    public MessageEntity(long id) {
-        this.id = id;
-    }
-
-    public MessageEntity(long id, long sourceMessageId) {
-        this.id = id;
-        this.sourceMessageId = sourceMessageId;
-    }
-
-    public MessageEntity(long id, long sourceMessageId, long sourceMessageAuthor) {
-        this.id = id;
-        this.sourceMessageId = sourceMessageId;
-        this.sourceMessageAuthor = sourceMessageAuthor;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public long getSourceMessageId() {
-        return sourceMessageId;
-    }
-
-    public void setSourceMessageId(long sourceMessageId) {
-        this.sourceMessageId = sourceMessageId;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public boolean isDeleted() {
-        return deleted;
-    }
-
-    public void setDeleted(boolean deleted) {
-        this.deleted = deleted;
-    }
-
-    public long getSourceMessageAuthor() {
-        return sourceMessageAuthor;
-    }
-
-    public void setSourceMessageAuthor(long sourceMessageAuthor) {
-        this.sourceMessageAuthor = sourceMessageAuthor;
-    }
-}
+    @Column(name = "deleted")
+    var isDeleted: Boolean = false
+)
