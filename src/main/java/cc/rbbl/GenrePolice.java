@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 public class GenrePolice extends ListenerAdapter implements Runnable {
 
+    private static final String DELETE_REACTION = "U+274c";
     private static final long RECONNECTION_TIMEOUT = 70000L;
 
     private final List<ErrorResponse> okErrorResponses = List.of(ErrorResponse.UNKNOWN_MESSAGE, ErrorResponse.UNKNOWN_CHANNEL);
@@ -87,6 +88,7 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
                 session.persist(new MessageEntity(sendMessage.getIdLong(), msg.getIdLong(), msg.getAuthor().getIdLong()));
                 transaction.commit();
                 session.close();
+                sendMessage.addReaction(DELETE_REACTION).queue();
                 log.info("Send Message " + sendMessage.getId());
             });
         }
@@ -94,7 +96,23 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
 
     @Override
     public void onMessageReactionAdd(@NotNull MessageReactionAddEvent event) {
-        super.onMessageReactionAdd(event);
+        if (event.getReaction().getReactionEmote().getAsCodepoints().equals(DELETE_REACTION)) {
+            Session session = sessionFactory.openSession();
+            MessageEntity entity = session.get(MessageEntity.class, event.getMessageIdLong());
+            session.close();
+            if (entity != null && entity.getSourceMessageAuthor() == event.getUserIdLong()) {
+                event.retrieveMessage().queue(message -> message.delete().queue(unused -> {
+                            Session deleteSession = sessionFactory.openSession();
+                            Transaction transaction = deleteSession.beginTransaction();
+                            MessageEntity editEntity = deleteSession.get(MessageEntity.class, message.getIdLong());
+                            editEntity.setDeleted(true);
+                            deleteSession.save(editEntity);
+                            transaction.commit();
+                            deleteSession.close();
+                        }
+                ));
+            }
+        }
     }
 
     @Override
@@ -152,17 +170,17 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
         responseSet = responseSet.stream().distinct().collect(Collectors.toList());
         for (GenreResponse response : responseSet) {
             message.append("**").append(response.getTitle()).append("**").append(":");
-            if(response.getError() != null) {
+            if (response.getError() != null) {
                 if (response.getError() instanceof NoGenreFoundException) {
                     message.append(" Spotify has no genre for that Item");
                 } else if (response.getError() instanceof IllegalArgumentException) {
                     message.append(" unknown ID");
-                } else if(response.getError() instanceof ParsingException) {
+                } else if (response.getError() instanceof ParsingException) {
                     message.append(" broken Link");
                 } else {
                     message.append(" unknown Error");
                 }
-            }else {
+            } else {
                 for (String genre : response.getGenres()) {
                     message.append(" \"").append(genre).append("\"");
                 }
