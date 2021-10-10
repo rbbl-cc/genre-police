@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
+    <persistence-unit name="p-unit">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <class>cc.rbbl.persistence.MessageEntity</class>
+    </persistence-unit>
+</persistence>

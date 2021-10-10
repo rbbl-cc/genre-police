@@ -17,12 +17,13 @@ import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,11 +38,11 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     private boolean isConnected = true;
     private static final Logger log = LoggerFactory.getLogger(GenrePolice.class);
     private final MessageHandler[] messageHandlers;
-    private final SessionFactory sessionFactory;
+    private final EntityManagerFactory entityManagerFactory;
 
-    public GenrePolice(ParameterHolder parameters, SessionFactory sessionFactory) {
+    public GenrePolice(ParameterHolder parameters, EntityManagerFactory entityManagerFactory) {
         messageHandlers = new MessageHandler[]{new SpotifyMessageHandler(parameters)};
-        this.sessionFactory = sessionFactory;
+        this.entityManagerFactory = entityManagerFactory;
     }
 
     @Override
@@ -83,11 +84,11 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
         }
         if (responses.size() > 0) {
             msg.reply(responsesToMessage(responses)).queue(sendMessage -> {
-                Session session = sessionFactory.openSession();
-                Transaction transaction = session.beginTransaction();
-                session.persist(new MessageEntity(sendMessage.getIdLong(), msg.getIdLong(), msg.getAuthor().getIdLong()));
-                transaction.commit();
-                session.close();
+                EntityManager entityManager = entityManagerFactory.createEntityManager();
+                entityManager.getTransaction().begin();
+                entityManager.persist(new MessageEntity(sendMessage.getIdLong(), msg.getIdLong(), msg.getAuthor().getIdLong()));
+                entityManager.getTransaction().commit();
+                entityManager.close();
                 sendMessage.addReaction(DELETE_REACTION).queue();
                 log.info("Send Message " + sendMessage.getId());
             });
@@ -97,18 +98,17 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     @Override
     public void onMessageReactionAdd(@NotNull MessageReactionAddEvent event) {
         if (event.getReaction().getReactionEmote().getAsCodepoints().equals(DELETE_REACTION)) {
-            Session session = sessionFactory.openSession();
-            MessageEntity entity = session.get(MessageEntity.class, event.getMessageIdLong());
-            session.close();
+            EntityManager entityManager = entityManagerFactory.createEntityManager();
+            MessageEntity entity = entityManager.find(MessageEntity.class, event.getMessageIdLong());
+            entityManager.close();
             if (entity != null && entity.getSourceMessageAuthor() == event.getUserIdLong()) {
                 event.retrieveMessage().queue(message -> message.delete().queue(unused -> {
-                            Session deleteSession = sessionFactory.openSession();
-                            Transaction transaction = deleteSession.beginTransaction();
-                            MessageEntity editEntity = deleteSession.get(MessageEntity.class, message.getIdLong());
+                            EntityManager deleteEntityManager = entityManagerFactory.createEntityManager();
+                            deleteEntityManager.getTransaction().begin();
+                            MessageEntity editEntity = deleteEntityManager.find(MessageEntity.class, message.getIdLong());
                             editEntity.setDeleted(true);
-                            deleteSession.save(editEntity);
-                            transaction.commit();
-                            deleteSession.close();
+                            deleteEntityManager.persist(editEntity);
+                            deleteEntityManager.getTransaction().commit();
                         }
                 ));
             }
@@ -117,29 +117,29 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
 
     @Override
     public void onMessageDelete(@NotNull MessageDeleteEvent event) {
-        Session session = sessionFactory.openSession();
-        List<MessageEntity> resultList = session
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        List<MessageEntity> resultList = entityManager
                 .createQuery("FROM sent_messages WHERE sourceMessageId = " + event.getMessageId(), MessageEntity.class)
                 .getResultList();
-        session.close();
+        entityManager.close();
         for (MessageEntity entity : resultList) {
             event.getChannel().deleteMessageById(entity.getId()).queue(unused -> {
-                Session deleteSession = sessionFactory.openSession();
-                Transaction transaction = deleteSession.beginTransaction();
+                EntityManager deleteEntityManager = entityManagerFactory.createEntityManager();
+                deleteEntityManager.getTransaction().begin();
                 entity.setDeleted(true);
-                deleteSession.update(entity);
-                transaction.commit();
-                deleteSession.close();
+                deleteEntityManager.persist(entity);
+                deleteEntityManager.getTransaction().commit();
+                deleteEntityManager.close();
             }, throwable -> {
                 if (throwable instanceof ErrorResponseException) {
                     ErrorResponseException exception = (ErrorResponseException) throwable;
                     if (okErrorResponses.contains(exception.getErrorResponse())) {
-                        Session deleteSession = sessionFactory.openSession();
-                        Transaction transaction = deleteSession.beginTransaction();
+                        EntityManager deleteEntityManager = entityManagerFactory.createEntityManager();
+                        deleteEntityManager.getTransaction().begin();
                         entity.setDeleted(true);
-                        deleteSession.update(entity);
-                        transaction.commit();
-                        deleteSession.close();
+                        deleteEntityManager.persist(entity);
+                        deleteEntityManager.getTransaction().commit();
+                        deleteEntityManager.close();
                     }
                 } else {
                     throw new RuntimeException(throwable);

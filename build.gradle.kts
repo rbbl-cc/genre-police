@@ -33,6 +33,7 @@ dependencies {
     //Persistence
     implementation("org.postgresql:postgresql:42.2.24")
     implementation("org.hibernate:hibernate-core:5.5.7.Final")
+    implementation("org.apache.commons:commons-dbcp2:2.9.0")
     implementation("org.flywaydb:flyway-core:7.15.0")
 
     //LOGGING

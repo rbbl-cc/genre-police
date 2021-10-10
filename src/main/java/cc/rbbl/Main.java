@@ -6,10 +6,17 @@ import cc.rbbl.program_parameters_jvm.ParameterHolder;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.flywaydb.core.Flyway;
+import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.cfg.Configuration;
 
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import javax.security.auth.login.LoginException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public class Main {
@@ -32,24 +39,35 @@ public class Main {
         // All other events will be disabled.
         JDABuilder.create(params.get("DISCORD_TOKEN"), GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES,
                         GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.DIRECT_MESSAGE_REACTIONS)
-                .addEventListeners(new GenrePolice(params, getHibernateConfig(params).buildSessionFactory()))
+                .disableCache(CacheFlag.ACTIVITY, CacheFlag.VOICE_STATE, CacheFlag.EMOTE,
+                        CacheFlag.CLIENT_STATUS, CacheFlag.ONLINE_STATUS)
+                .addEventListeners(new GenrePolice(params, getHibernateConfig(params)))
                 .setActivity(Activity.watching("Spotify Links"))
                 .build();
     }
 
     private static void handleDbMigration(ParameterHolder parameters) {
-        Flyway flyway = Flyway.configure().dataSource(parameters.get("JDBC_URL"), parameters.get("DB_USER"), parameters.get("DB_PASSWORD")).load();
+        Flyway flyway = Flyway.configure().dataSource(
+                parameters.get("JDBC_URL"),
+                parameters.get("DB_USER"),
+                parameters.get("DB_PASSWORD")
+        ).load();
         flyway.migrate();
     }
 
-    private static Configuration getHibernateConfig(ParameterHolder parameters) {
-        Configuration config = new Configuration();
-        config.setProperty("hibernate.connection.password", parameters.get("DB_PASSWORD"));
-        config.setProperty("hibernate.connection.driver_class", "org.postgresql.Driver");
-        config.setProperty("hibernate.connection.url", parameters.get("JDBC_URL"));
-        config.setProperty("hibernate.connection.username", parameters.get("DB_USER"));
-        config.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
-        config.addAnnotatedClass(MessageEntity.class);
-        return config;
+    private static EntityManagerFactory getHibernateConfig(ParameterHolder parameters) {
+        BasicDataSource dataSource = new BasicDataSource();
+
+        dataSource.setPassword(parameters.get("DB_PASSWORD"));
+        dataSource.setDriverClassName("org.postgresql.Driver");
+        dataSource.setUrl(parameters.get("JDBC_URL"));
+        dataSource.setUsername(parameters.get("DB_USER"));
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(AvailableSettings.DATASOURCE, dataSource);
+        properties.put(AvailableSettings.DIALECT, "org.hibernate.dialect.PostgreSQLDialect");
+        return Persistence.createEntityManagerFactory("p-unit", properties);
+
+
     }
 }
