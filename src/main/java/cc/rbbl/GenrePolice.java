@@ -36,7 +36,7 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
     private final List<ErrorResponse> okErrorResponses = List.of(ErrorResponse.UNKNOWN_MESSAGE, ErrorResponse.UNKNOWN_CHANNEL);
 
     private boolean isConnected = true;
-    private static final Logger log = LoggerFactory.getLogger(GenrePolice.class);
+    private final Logger log = LoggerFactory.getLogger(GenrePolice.class);
     private final MessageHandler[] messageHandlers;
     private final EntityManagerFactory entityManagerFactory;
 
