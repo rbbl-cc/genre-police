@@ -1,195 +1,183 @@
-package cc.rbbl;
+package cc.rbbl
 
-import cc.rbbl.exceptions.NoGenreFoundException;
-import cc.rbbl.exceptions.ParsingException;
-import cc.rbbl.link_handlers.SpotifyMessageHandler;
-import cc.rbbl.persistence.MessageEntity;
-import cc.rbbl.program_parameters_jvm.ParameterHolder;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.DisconnectEvent;
-import net.dv8tion.jda.api.events.ReconnectedEvent;
-import net.dv8tion.jda.api.events.ResumedEvent;
-import net.dv8tion.jda.api.events.ShutdownEvent;
-import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
-import net.dv8tion.jda.api.exceptions.ErrorResponseException;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.requests.ErrorResponse;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import cc.rbbl.exceptions.NoGenreFoundException
+import cc.rbbl.exceptions.ParsingException
+import cc.rbbl.link_handlers.SpotifyMessageHandler
+import cc.rbbl.persistence.MessageEntity
+import cc.rbbl.program_parameters_jvm.ParameterHolder
+import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.events.DisconnectEvent
+import net.dv8tion.jda.api.events.ReconnectedEvent
+import net.dv8tion.jda.api.events.ResumedEvent
+import net.dv8tion.jda.api.events.ShutdownEvent
+import net.dv8tion.jda.api.events.message.MessageDeleteEvent
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
+import net.dv8tion.jda.api.exceptions.ErrorResponseException
+import net.dv8tion.jda.api.hooks.ListenerAdapter
+import net.dv8tion.jda.api.requests.ErrorResponse
+import org.slf4j.LoggerFactory
+import java.util.stream.Collectors
+import javax.persistence.EntityManagerFactory
+import kotlin.system.exitProcess
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+class GenrePolice(parameters: ParameterHolder, entityManagerFactory: EntityManagerFactory) : ListenerAdapter(),
+    Runnable {
+    private val okErrorResponses = listOf(ErrorResponse.UNKNOWN_MESSAGE, ErrorResponse.UNKNOWN_CHANNEL)
+    private var isConnected = true
+    private val log = LoggerFactory.getLogger(GenrePolice::class.java)
+    private val messageHandlers: Array<MessageHandler>
+    private val entityManagerFactory: EntityManagerFactory
 
-public class GenrePolice extends ListenerAdapter implements Runnable {
-
-    private static final String DELETE_REACTION = "U+274c";
-    private static final long RECONNECTION_TIMEOUT = 70000L;
-
-    private final List<ErrorResponse> okErrorResponses = List.of(ErrorResponse.UNKNOWN_MESSAGE, ErrorResponse.UNKNOWN_CHANNEL);
-
-    private boolean isConnected = true;
-    private final Logger log = LoggerFactory.getLogger(GenrePolice.class);
-    private final MessageHandler[] messageHandlers;
-    private final EntityManagerFactory entityManagerFactory;
-
-    public GenrePolice(ParameterHolder parameters, EntityManagerFactory entityManagerFactory) {
-        messageHandlers = new MessageHandler[]{new SpotifyMessageHandler(parameters)};
-        this.entityManagerFactory = entityManagerFactory;
+    init {
+        messageHandlers = arrayOf(SpotifyMessageHandler(parameters))
+        this.entityManagerFactory = entityManagerFactory
     }
 
-    @Override
-    public void onDisconnect(@NotNull DisconnectEvent event) {
-        super.onDisconnect(event);
-        isConnected = false;
-        Thread thread = new Thread(this);
-        log.error("Disconnected. Starting reconnect timeout of " + RECONNECTION_TIMEOUT + " mills");
-        thread.start();
+    override fun onDisconnect(event: DisconnectEvent) {
+        super.onDisconnect(event)
+        isConnected = false
+        val thread = Thread(this)
+        log.error("Disconnected. Starting reconnect timeout of $RECONNECTION_TIMEOUT mills")
+        thread.start()
     }
 
-    @Override
-    public void onReconnected(@NotNull ReconnectedEvent event) {
-        super.onReconnected(event);
-        isConnected = true;
-        log.info("Reconnected!");
+    override fun onReconnected(event: ReconnectedEvent) {
+        super.onReconnected(event)
+        isConnected = true
+        log.info("Reconnected!")
     }
 
-    @Override
-    public void onResumed(@NotNull ResumedEvent event) {
-        super.onResumed(event);
-        isConnected = true;
-        log.info("Reconnected!");
+    override fun onResumed(event: ResumedEvent) {
+        super.onResumed(event)
+        isConnected = true
+        log.info("Reconnected!")
     }
 
-    @Override
-    public void onShutdown(@NotNull ShutdownEvent event) {
-        super.onShutdown(event);
-        log.error("Discord Shutdown Event occurred. Shutting down Process.");
-        System.exit(1);
+    override fun onShutdown(event: ShutdownEvent) {
+        super.onShutdown(event)
+        log.error("Discord Shutdown Event occurred. Shutting down Process.")
+        exitProcess(1)
     }
 
-    @Override
-    public void onMessageReceived(MessageReceivedEvent event) {
-        Message msg = event.getMessage();
-        ArrayList<GenreResponse> responses = new ArrayList<>();
-        for (MessageHandler handler : messageHandlers) {
-            responses.addAll(handler.getGenreResponses(msg.getContentRaw()));
+    override fun onMessageReceived(event: MessageReceivedEvent) {
+        val msg = event.message
+        val responses = ArrayList<GenreResponse>()
+        for (handler in messageHandlers) {
+            responses.addAll(handler.getGenreResponses(msg.contentRaw))
         }
-        if (responses.size() > 0) {
-            msg.reply(responsesToMessage(responses)).queue(sendMessage -> {
-                EntityManager entityManager = entityManagerFactory.createEntityManager();
-                entityManager.getTransaction().begin();
-                entityManager.persist(new MessageEntity(sendMessage.getIdLong(), msg.getIdLong(), msg.getAuthor().getIdLong(), false));
-                entityManager.getTransaction().commit();
-                entityManager.close();
-                sendMessage.addReaction(DELETE_REACTION).queue();
-                log.info("Send Message " + sendMessage.getId());
-            });
-        }
-    }
-
-    @Override
-    public void onMessageReactionAdd(@NotNull MessageReactionAddEvent event) {
-        if (event.getReaction().getReactionEmote().getAsCodepoints().equals(DELETE_REACTION)) {
-            EntityManager entityManager = entityManagerFactory.createEntityManager();
-            MessageEntity entity = entityManager.find(MessageEntity.class, event.getMessageIdLong());
-            entityManager.close();
-            if (entity != null && entity.getSourceMessageAuthor() == event.getUserIdLong()) {
-                log.info("Deleting Message " + entity.getId());
-                event.retrieveMessage().queue(message -> message.delete().queue(unused -> {
-                            EntityManager deleteEntityManager = entityManagerFactory.createEntityManager();
-                            deleteEntityManager.getTransaction().begin();
-                            MessageEntity editEntity = deleteEntityManager.find(MessageEntity.class, message.getIdLong());
-                            editEntity.setDeleted(true);
-                            deleteEntityManager.persist(editEntity);
-                            deleteEntityManager.getTransaction().commit();
-                        }
-                ));
+        if (responses.size > 0) {
+            msg.reply(responsesToMessage(responses)).queue { sendMessage: Message ->
+                val entityManager = entityManagerFactory.createEntityManager()
+                entityManager.transaction.begin()
+                entityManager.persist(MessageEntity(sendMessage.idLong, msg.idLong, msg.author.idLong, false))
+                entityManager.transaction.commit()
+                entityManager.close()
+                sendMessage.addReaction(DELETE_REACTION).queue()
+                log.info("Send Message ${sendMessage.id}")
             }
         }
     }
 
-    @Override
-    public void onMessageDelete(@NotNull MessageDeleteEvent event) {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
-        List<MessageEntity> resultList = entityManager
-                .createQuery("FROM sent_messages WHERE sourceMessageId = " + event.getMessageId(), MessageEntity.class)
-                .getResultList();
-        entityManager.close();
-        for (MessageEntity entity : resultList) {
-            log.info("Deleting Message " + entity.getId());
-            event.getChannel().deleteMessageById(entity.getId()).queue(unused -> {
-                EntityManager deleteEntityManager = entityManagerFactory.createEntityManager();
-                deleteEntityManager.getTransaction().begin();
-                entity.setDeleted(true);
-                deleteEntityManager.persist(entity);
-                deleteEntityManager.getTransaction().commit();
-                deleteEntityManager.close();
-            }, throwable -> {
-                if (throwable instanceof ErrorResponseException) {
-                    ErrorResponseException exception = (ErrorResponseException) throwable;
-                    if (okErrorResponses.contains(exception.getErrorResponse())) {
-                        EntityManager deleteEntityManager = entityManagerFactory.createEntityManager();
-                        deleteEntityManager.getTransaction().begin();
-                        entity.setDeleted(true);
-                        deleteEntityManager.persist(entity);
-                        deleteEntityManager.getTransaction().commit();
-                        deleteEntityManager.close();
+    override fun onMessageReactionAdd(event: MessageReactionAddEvent) {
+        if (event.reaction.reactionEmote.asCodepoints == DELETE_REACTION) {
+            val entityManager = entityManagerFactory.createEntityManager()
+            val entity = entityManager.find(MessageEntity::class.java, event.messageIdLong)
+            entityManager.close()
+            if (entity != null && entity.sourceMessageAuthor == event.userIdLong) {
+                log.info("Deleting Message ${entity.id}")
+                event.retrieveMessage().queue { message: Message ->
+                    message.delete().queue {
+                        val deleteEntityManager = entityManagerFactory.createEntityManager()
+                        deleteEntityManager.transaction.begin()
+                        val editEntity = deleteEntityManager.find(MessageEntity::class.java, message.idLong)
+                        editEntity.isDeleted = true
+                        deleteEntityManager.persist(editEntity)
+                        deleteEntityManager.transaction.commit()
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onMessageDelete(event: MessageDeleteEvent) {
+        val entityManager = entityManagerFactory.createEntityManager()
+        val resultList = entityManager
+            .createQuery("FROM sent_messages WHERE sourceMessageId = ${event.messageId}", MessageEntity::class.java)
+            .resultList
+        entityManager.close()
+        for (entity in resultList) {
+            log.info("Deleting Message " + entity.id)
+            event.channel.deleteMessageById(entity.id).queue({ unused: Void? ->
+                val deleteEntityManager = entityManagerFactory.createEntityManager()
+                deleteEntityManager.transaction.begin()
+                entity.isDeleted = true
+                deleteEntityManager.persist(entity)
+                deleteEntityManager.transaction.commit()
+                deleteEntityManager.close()
+            }) { throwable: Throwable? ->
+                if (throwable is ErrorResponseException) {
+                    if (okErrorResponses.contains(throwable.errorResponse)) {
+                        val deleteEntityManager = entityManagerFactory.createEntityManager()
+                        deleteEntityManager.transaction.begin()
+                        entity.isDeleted = true
+                        deleteEntityManager.persist(entity)
+                        deleteEntityManager.transaction.commit()
+                        deleteEntityManager.close()
                     }
                 } else {
-                    throw new RuntimeException(throwable);
+                    throw RuntimeException(throwable)
                 }
-            });
-
+            }
         }
     }
 
-    @Override
-    public void run() {
+    override fun run() {
         try {
-            Thread.sleep(RECONNECTION_TIMEOUT);
+            Thread.sleep(RECONNECTION_TIMEOUT)
             if (!isConnected) {
-                log.error("Shutting down after waiting " + RECONNECTION_TIMEOUT + " mills to reconnect.");
-                System.exit(1);
+                log.error("Shutting down after waiting $RECONNECTION_TIMEOUT mills to reconnect.")
+                exitProcess(1)
             }
-        } catch (InterruptedException e) {
+        } catch (e: InterruptedException) {
             if (!isConnected) {
-                log.error("Reconnection Thread interrupted. Shutting down immediately.", e);
-                System.exit(1);
+                log.error("Reconnection Thread interrupted. Shutting down immediately.", e)
+                exitProcess(1)
             }
         }
     }
 
-    private String responsesToMessage(List<GenreResponse> responseSet) {
-        StringBuilder message = new StringBuilder("Following Genres got found:\n");
-        responseSet = responseSet.stream().distinct().collect(Collectors.toList());
-        for (GenreResponse response : responseSet) {
-            message.append("**").append(response.getTitle()).append("**").append(":");
-            if (response.getError() != null) {
-                if (response.getError() instanceof NoGenreFoundException) {
-                    message.append(" Spotify has no genre for that Item");
-                } else if (response.getError() instanceof IllegalArgumentException) {
-                    message.append(" unknown ID");
-                } else if (response.getError() instanceof ParsingException) {
-                    message.append(" broken Link");
-                } else {
-                    message.append(" unknown Error");
+    private fun responsesToMessage(responseSet: List<GenreResponse>): String {
+        val message = StringBuilder("Following Genres got found:\n")
+        for ((title, genres, error) in responseSet.stream().distinct().collect(Collectors.toList())) {
+            message.append("**").append(title).append("**").append(":")
+            if (error != null) {
+                when (error) {
+                    is NoGenreFoundException -> {
+                        message.append(" Spotify has no genre for that Item")
+                    }
+                    is IllegalArgumentException -> {
+                        message.append(" unknown ID")
+                    }
+                    is ParsingException -> {
+                        message.append(" broken Link")
+                    }
+                    else -> {
+                        message.append(" unknown Error")
+                    }
                 }
             } else {
-                for (String genre : response.getGenres()) {
-                    message.append(" \"").append(genre).append("\"");
+                for (genre in genres) {
+                    message.append(" \"").append(genre).append("\"")
                 }
             }
-            message.append("\n");
+            message.append("\n")
         }
+        return message.toString()
+    }
 
-        return message.toString();
+    companion object {
+        private const val DELETE_REACTION = "U+274c"
+        private const val RECONNECTION_TIMEOUT = 70000L
     }
 }
