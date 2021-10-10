@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "cc.rbbl"
-version = "1.4.0-RC1"
+version = "1.4.0-RC4"
 
 repositories {
     mavenCentral()
@@ -15,8 +15,10 @@ repositories {
     maven("https://m2.dv8tion.net/releases")
 }
 
+
+
 application {
-    mainClass.set("cc.rbbl.Main")
+    mainClass.set("cc.rbbl.MainKt")
 }
 
 sourceSets.main {
