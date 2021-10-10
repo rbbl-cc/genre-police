@@ -148,32 +148,32 @@ class GenrePolice(parameters: ParameterHolder, entityManagerFactory: EntityManag
     }
 
     private fun responsesToMessage(responseSet: List<GenreResponse>): String {
-        val message = StringBuilder("Following Genres got found:\n")
+        var message = "Following Genres got found:\n"
         for ((title, genres, error) in responseSet.stream().distinct().collect(Collectors.toList())) {
-            message.append("**").append(title).append("**").append(":")
+            message += "**$title**:"
             if (error != null) {
-                when (error) {
+                message += when (error) {
                     is NoGenreFoundException -> {
-                        message.append(" Spotify has no genre for that Item")
+                        " Spotify has no genre for that Item"
                     }
                     is IllegalArgumentException -> {
-                        message.append(" unknown ID")
+                        " unknown ID"
                     }
                     is ParsingException -> {
-                        message.append(" broken Link")
+                        " broken Link"
                     }
                     else -> {
-                        message.append(" unknown Error")
+                        " unknown Error"
                     }
                 }
             } else {
                 for (genre in genres) {
-                    message.append(" \"").append(genre).append("\"")
+                    message += " \"$genre\""
                 }
             }
-            message.append("\n")
+            message += "\n"
         }
-        return message.toString()
+        return message
     }
 
     companion object {
