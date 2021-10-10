@@ -9,10 +9,10 @@ genre-police is a discord bot, that posts the genres to spotify links that are p
 you need to supply the bot with the appropriate tokes to access both the spotify and the discord api, so you need to
 register as a developer on both platforms, if you want to run this bot.
 
-at the moment the tokens can only be passed in as key/value pairs via the program arguments.
+**Requirements**:
+- PostgreSQL 13
 
-keys:
-
+**Parameters**:
 - DISCORD_TOKEN
 - SPOTIFY_CLIENT_ID
 - SPOTIFY_CLIENT_SECRET
@@ -47,7 +47,7 @@ docker run -d --name gp_1.4.0 registry.gitlab.com/rbbl/genre-police:latest \
 
 ### build from source
 
-requirements :
+**Requirements**:
 
 - jdk11
 
