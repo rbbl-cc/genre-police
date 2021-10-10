@@ -16,6 +16,9 @@ public class MessageEntity {
     @Column
     private boolean deleted;
 
+    @Column(name = "source_message_author")
+    private long sourceMessageAuthor;
+
     protected MessageEntity(){
     }
 
@@ -26,6 +29,12 @@ public class MessageEntity {
     public MessageEntity(long id, long sourceMessageId) {
         this.id = id;
         this.sourceMessageId = sourceMessageId;
+    }
+
+    public MessageEntity(long id, long sourceMessageId, long sourceMessageAuthor) {
+        this.id = id;
+        this.sourceMessageId = sourceMessageId;
+        this.sourceMessageAuthor = sourceMessageAuthor;
     }
 
     public long getId() {
@@ -50,5 +59,13 @@ public class MessageEntity {
 
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
+    }
+
+    public long getSourceMessageAuthor() {
+        return sourceMessageAuthor;
+    }
+
+    public void setSourceMessageAuthor(long sourceMessageAuthor) {
+        this.sourceMessageAuthor = sourceMessageAuthor;
     }
 }

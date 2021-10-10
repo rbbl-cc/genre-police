@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.events.ResumedEvent;
 import net.dv8tion.jda.api.events.ShutdownEvent;
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.ErrorResponse;
@@ -80,15 +81,20 @@ public class GenrePolice extends ListenerAdapter implements Runnable {
             responses.addAll(handler.getGenreResponses(msg.getContentRaw()));
         }
         if (responses.size() > 0) {
-            msg.reply(responsesToMessage(responses)).queue(message -> {
+            msg.reply(responsesToMessage(responses)).queue(sendMessage -> {
                 Session session = sessionFactory.openSession();
                 Transaction transaction = session.beginTransaction();
-                session.persist(new MessageEntity(message.getIdLong(), msg.getIdLong()));
+                session.persist(new MessageEntity(sendMessage.getIdLong(), msg.getIdLong(), msg.getAuthor().getIdLong()));
                 transaction.commit();
                 session.close();
-                log.info("Send Message " + message.getId());
+                log.info("Send Message " + sendMessage.getId());
             });
         }
+    }
+
+    @Override
+    public void onMessageReactionAdd(@NotNull MessageReactionAddEvent event) {
+        super.onMessageReactionAdd(event);
     }
 
     @Override

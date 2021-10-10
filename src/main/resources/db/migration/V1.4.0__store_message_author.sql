@@ -1,0 +1,1 @@
+ALTER TABLE sent_messages ADD COLUMN source_message_author bigint;
