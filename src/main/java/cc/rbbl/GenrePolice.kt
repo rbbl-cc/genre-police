@@ -83,17 +83,16 @@ class GenrePolice(parameters: ParameterHolder, entityManagerFactory: EntityManag
         if (event.reaction.reactionEmote.asCodepoints == DELETE_REACTION) {
             val entityManager = entityManagerFactory.createEntityManager()
             val entity = entityManager.find(MessageEntity::class.java, event.messageIdLong)
-            entityManager.close()
             if (entity != null && entity.sourceMessageAuthor == event.userIdLong) {
                 log.info("Deleting Message ${entity.id}")
                 event.retrieveMessage().queue { message: Message ->
                     message.delete().queue {
-                        val deleteEntityManager = entityManagerFactory.createEntityManager()
-                        deleteEntityManager.transaction.begin()
-                        val editEntity = deleteEntityManager.find(MessageEntity::class.java, message.idLong)
+                        entityManager.transaction.begin()
+                        val editEntity = entityManager.find(MessageEntity::class.java, message.idLong)
                         editEntity.isDeleted = true
-                        deleteEntityManager.persist(editEntity)
-                        deleteEntityManager.transaction.commit()
+                        entityManager.merge(editEntity)
+                        entityManager.transaction.commit()
+                        entityManager.close()
                     }
                 }
             }
@@ -105,27 +104,25 @@ class GenrePolice(parameters: ParameterHolder, entityManagerFactory: EntityManag
         val resultList = entityManager
             .createQuery("FROM sent_messages WHERE sourceMessageId = ${event.messageId}", MessageEntity::class.java)
             .resultList
-        entityManager.close()
         for (entity in resultList) {
             log.info("Deleting Message " + entity.id)
-            event.channel.deleteMessageById(entity.id).queue({ unused: Void? ->
-                val deleteEntityManager = entityManagerFactory.createEntityManager()
-                deleteEntityManager.transaction.begin()
+            event.channel.deleteMessageById(entity.id).queue({
+                entityManager.transaction.begin()
                 entity.isDeleted = true
-                deleteEntityManager.persist(entity)
-                deleteEntityManager.transaction.commit()
-                deleteEntityManager.close()
+                entityManager.merge(entity)
+                entityManager.transaction.commit()
+                entityManager.close()
             }) { throwable: Throwable? ->
                 if (throwable is ErrorResponseException) {
                     if (okErrorResponses.contains(throwable.errorResponse)) {
-                        val deleteEntityManager = entityManagerFactory.createEntityManager()
-                        deleteEntityManager.transaction.begin()
+                        entityManager.transaction.begin()
                         entity.isDeleted = true
-                        deleteEntityManager.persist(entity)
-                        deleteEntityManager.transaction.commit()
-                        deleteEntityManager.close()
+                        entityManager.merge(entity)
+                        entityManager.transaction.commit()
+                        entityManager.close()
                     }
                 } else {
+                    entityManager.close()
                     throw RuntimeException(throwable)
                 }
             }
@@ -177,7 +174,7 @@ class GenrePolice(parameters: ParameterHolder, entityManagerFactory: EntityManag
     }
 
     companion object {
-        private const val DELETE_REACTION = "U+274c"
+        private const val DELETE_REACTION = "U+1f5d1"
         private const val RECONNECTION_TIMEOUT = 70000L
     }
 }
