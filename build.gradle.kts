@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "cc.rbbl"
-version = "1.4.0-RC4"
+version = "1.4.0-RC5"
 
 repositories {
     mavenCentral()
