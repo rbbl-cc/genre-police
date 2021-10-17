@@ -10,7 +10,7 @@ you need to supply the bot with the appropriate tokes to access both the spotify
 register as a developer on both platforms, if you want to run this bot.
 
 **Requirements**:
-- [PostgreSQL 13](https://www.postgresql.org/)
+- [PostgreSQL 14](https://www.postgresql.org/)
 
 **Parameters**:
 - DISCORD_TOKEN
