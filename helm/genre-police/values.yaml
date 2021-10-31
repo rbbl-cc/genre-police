@@ -1,0 +1,84 @@
+# Default values for genre-police.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+genre_police:
+  replicaCount: 1
+
+  image:
+    repository: registry.gitlab.com/rbbl/genre-police
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  nameOverride: ""
+  fullnameOverride: ""
+
+  podAnnotations: {}
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+  settings:
+    DISCORD_TOKEN: ""
+    SPOTIFY_CLIENT_ID: ""
+    SPOTIFY_CLIENT_SECRET: ""
+    JDBC_URL: ""
+    DB_USER: ""
+    DB_PASSWORD: ""
+
+db:
+  enabled: true
+  replicaCount: 1
+
+  service:
+    type: ClusterIP
+
+  image:
+    repository: postgres
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "14"
+
+  nameOverride: ""
+  fullnameOverride: ""
+
+  podAnnotations: {}
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+  #   memory: 128Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+  settings:
+    POSTGRES_USER: "gp"
+    POSTGRES_PASSWORD: "day1jxy8MVY6dbg@akp"
+    POSTGRES_DB: "genre_police"
