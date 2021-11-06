@@ -145,7 +145,7 @@ class GenrePolice(parameters: ParameterHolder, entityManagerFactory: EntityManag
     }
 
     private fun responsesToMessage(responseSet: List<GenreResponse>): String {
-        var message = "Following Genres got found:\n"
+        var message = "Following Genres were found:\n"
         for ((title, genres, error) in responseSet.stream().distinct().collect(Collectors.toList())) {
             message += "**$title**:"
             if (error != null) {
