@@ -23,7 +23,7 @@ register as a developer on both platforms, if you want to run this bot.
 example:
 
 ```shell
-java -jar genre-police-1.4.0.jar \
+java -jar genre-police-1.4.1.jar \
   DISCORD_TOKEN=token \
   SPOTIFY_CLIENT_ID=id \
   SPOTIFY_CLIENT_SECRET=secret \
@@ -36,7 +36,7 @@ java -jar genre-police-1.4.0.jar \
 
 example:
 ```shell
-docker run -d --name gp_1.4.0 registry.gitlab.com/rbbl/genre-police:latest \
+docker run -d --name gp_1.4.1 registry.gitlab.com/rbbl/genre-police:latest \
   DISCORD_TOKEN=token \
   SPOTIFY_CLIENT_ID=id \
   SPOTIFY_CLIENT_SECRET=secret \
@@ -55,7 +55,7 @@ example:
 
 ```shell
 ./gradlew build
-java -jar target/genre-police-1.4.0.jar \
+java -jar target/genre-police-1.4.1.jar \
   DISCORD_TOKEN=token \
   SPOTIFY_CLIENT_ID=id \
   SPOTIFY_CLIENT_SECRET=secret \
