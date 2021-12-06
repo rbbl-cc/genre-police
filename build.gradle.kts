@@ -30,19 +30,19 @@ dependencies {
 
     implementation("cc.rbbl:program-parameters-jvm:1.0.3")
     implementation("net.dv8tion:JDA:4.2.1_265")
-    implementation("com.adamratzman:spotify-api-kotlin-core:3.8.3")
+    implementation("com.adamratzman:spotify-api-kotlin-core:3.8.4")
 
     //Persistence
-    implementation("org.postgresql:postgresql:42.2.24")
-    implementation("org.hibernate:hibernate-core:5.5.7.Final")
+    implementation("org.postgresql:postgresql:42.3.1")
+    implementation("org.hibernate:hibernate-core:5.6.1.Final")
     implementation("org.apache.commons:commons-dbcp2:2.9.0")
-    implementation("org.flywaydb:flyway-core:7.15.0")
+    implementation("org.flywaydb:flyway-core:8.1.0")
 
     //LOGGING
-    implementation("ch.qos.logback:logback-classic:1.2.6")
+    implementation("ch.qos.logback:logback-classic:1.2.7")
 
     //Testing
-    testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
 }
 
 tasks.getByName<Test>("test") {
