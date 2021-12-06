@@ -6,11 +6,8 @@ import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.utils.cache.CacheFlag
-import org.apache.commons.dbcp2.BasicDataSource
 import org.flywaydb.core.Flyway
-import org.hibernate.cfg.AvailableSettings
-import javax.persistence.EntityManagerFactory
-import javax.persistence.Persistence
+import org.jetbrains.exposed.sql.Database
 
 fun main(args: Array<String>) {
     val params = ParameterHolder(
@@ -26,7 +23,10 @@ fun main(args: Array<String>) {
     params.loadParametersFromEnvironmentVariables()
     params.loadParameters(args)
     params.checkParameterCompleteness()
+
     handleDbMigration(params)
+
+    Database.connect(params["JDBC_URL"]!!, "org.postgresql.Driver", params["DB_USER"]!!, params["DB_PASSWORD"]!!)
 
     // We only need 2 intents in this bot. We only respond to messages in guilds and private channels.
     // All other events will be disabled.
@@ -38,7 +38,7 @@ fun main(args: Array<String>) {
             CacheFlag.ACTIVITY, CacheFlag.VOICE_STATE, CacheFlag.EMOTE,
             CacheFlag.CLIENT_STATUS, CacheFlag.ONLINE_STATUS
         )
-        .addEventListeners(GenrePolice(params, getHibernateConfig(params)))
+        .addEventListeners(GenrePolice(params))
         .setActivity(Activity.watching("Spotify Links"))
         .build()
 }
@@ -50,16 +50,4 @@ private fun handleDbMigration(parameters: ParameterHolder) {
         parameters["DB_PASSWORD"]
     ).load()
     flyway.migrate()
-}
-
-private fun getHibernateConfig(parameters: ParameterHolder): EntityManagerFactory {
-    val dataSource = BasicDataSource()
-    dataSource.password = parameters["DB_PASSWORD"]
-    dataSource.driverClassName = "org.postgresql.Driver"
-    dataSource.url = parameters["JDBC_URL"]
-    dataSource.username = parameters["DB_USER"]
-    val properties: MutableMap<String?, Any?> = HashMap()
-    properties[AvailableSettings.DATASOURCE] = dataSource
-    properties[AvailableSettings.DIALECT] = "org.hibernate.dialect.PostgreSQLDialect"
-    return Persistence.createEntityManagerFactory("p-unit", properties)
 }

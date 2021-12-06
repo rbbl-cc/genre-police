@@ -3,6 +3,7 @@ package cc.rbbl
 import cc.rbbl.exceptions.NoGenreFoundException
 import cc.rbbl.exceptions.ParsingException
 import cc.rbbl.link_handlers.SpotifyMessageHandler
+import cc.rbbl.persistence.MessageDao
 import cc.rbbl.persistence.MessageEntity
 import cc.rbbl.program_parameters_jvm.ParameterHolder
 import net.dv8tion.jda.api.entities.Message
@@ -16,22 +17,21 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import net.dv8tion.jda.api.exceptions.ErrorResponseException
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.requests.ErrorResponse
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 import java.util.stream.Collectors
-import javax.persistence.EntityManagerFactory
 import kotlin.system.exitProcess
 
-class GenrePolice(parameters: ParameterHolder, entityManagerFactory: EntityManagerFactory) : ListenerAdapter(),
+class GenrePolice(parameters: ParameterHolder) : ListenerAdapter(),
     Runnable {
     private val okErrorResponses = listOf(ErrorResponse.UNKNOWN_MESSAGE, ErrorResponse.UNKNOWN_CHANNEL)
     private var isConnected = true
     private val log = LoggerFactory.getLogger(GenrePolice::class.java)
     private val messageHandlers: Array<MessageHandler>
-    private val entityManagerFactory: EntityManagerFactory
 
     init {
         messageHandlers = arrayOf(SpotifyMessageHandler(parameters))
-        this.entityManagerFactory = entityManagerFactory
     }
 
     override fun onDisconnect(event: DisconnectEvent) {
@@ -68,11 +68,12 @@ class GenrePolice(parameters: ParameterHolder, entityManagerFactory: EntityManag
         }
         if (responses.size > 0) {
             msg.reply(responsesToMessage(responses)).queue { sendMessage: Message ->
-                val entityManager = entityManagerFactory.createEntityManager()
-                entityManager.transaction.begin()
-                entityManager.persist(MessageEntity(sendMessage.idLong, msg.idLong, msg.author.idLong, false))
-                entityManager.transaction.commit()
-                entityManager.close()
+                transaction {
+                    MessageDao.new(sendMessage.idLong) {
+                        sourceMessageId = msg.idLong
+                        sourceMessageAuthor = msg.author.idLong
+                    }
+                }
                 sendMessage.addReaction(DELETE_REACTION).queue()
                 log.info("Send Message ${sendMessage.id}")
             }
@@ -81,53 +82,44 @@ class GenrePolice(parameters: ParameterHolder, entityManagerFactory: EntityManag
 
     override fun onMessageReactionAdd(event: MessageReactionAddEvent) {
         if (event.reaction.reactionEmote.asCodepoints == DELETE_REACTION) {
-            val entityManager = entityManagerFactory.createEntityManager()
-            val entity = entityManager.find(MessageEntity::class.java, event.messageIdLong)
+            val entity = transaction {
+                MessageDao.findById(event.messageIdLong)
+            }
             if (entity != null && entity.sourceMessageAuthor == event.userIdLong) {
                 log.info("Deleting Message ${entity.id}")
                 event.retrieveMessage().queue { message: Message ->
                     message.delete().queue {
-                        entityManager.transaction.begin()
-                        val editEntity = entityManager.find(MessageEntity::class.java, message.idLong)
-                        editEntity.isDeleted = true
-                        entityManager.merge(editEntity)
-                        entityManager.transaction.commit()
-                        entityManager.close()
+                        transaction {
+                            entity.isDeleted = true
+                        }
                     }
                 }
             }
         }
     }
 
-    override fun onMessageDelete(event: MessageDeleteEvent) {
-        val entityManager = entityManagerFactory.createEntityManager()
-        val resultList = entityManager
-            .createQuery("FROM sent_messages WHERE sourceMessageId = ${event.messageId}", MessageEntity::class.java)
-            .resultList
+    override fun onMessageDelete(event: MessageDeleteEvent) = transaction {
+        val resultList = MessageDao.find(MessageEntity.sourceMessageId eq event.messageIdLong)
         for (entity in resultList) {
             log.info("Deleting Message " + entity.id)
-            event.channel.deleteMessageById(entity.id).queue({
-                entityManager.transaction.begin()
-                entity.isDeleted = true
-                entityManager.merge(entity)
-                entityManager.transaction.commit()
-                entityManager.close()
+            event.channel.deleteMessageById(entity.id.value).queue({
+                transaction {
+                    entity.isDeleted = true
+                }
             }) { throwable: Throwable? ->
                 if (throwable is ErrorResponseException) {
                     if (okErrorResponses.contains(throwable.errorResponse)) {
-                        entityManager.transaction.begin()
-                        entity.isDeleted = true
-                        entityManager.merge(entity)
-                        entityManager.transaction.commit()
-                        entityManager.close()
+                        transaction {
+                            entity.isDeleted = true
+                        }
                     }
                 } else {
-                    entityManager.close()
                     throw RuntimeException(throwable)
                 }
             }
         }
     }
+
 
     override fun run() {
         try {

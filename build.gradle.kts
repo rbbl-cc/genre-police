@@ -15,8 +15,6 @@ repositories {
     maven("https://m2.dv8tion.net/releases")
 }
 
-
-
 application {
     mainClass.set("cc.rbbl.MainKt")
 }
@@ -24,6 +22,8 @@ application {
 sourceSets.main {
     java.srcDirs("src/main/java")
 }
+
+val exposedVersion = "0.34.1"
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
@@ -34,8 +34,9 @@ dependencies {
 
     //Persistence
     implementation("org.postgresql:postgresql:42.3.1")
-    implementation("org.hibernate:hibernate-core:5.6.1.Final")
-    implementation("org.apache.commons:commons-dbcp2:2.9.0")
+    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
     implementation("org.flywaydb:flyway-core:8.1.0")
 
     //LOGGING
