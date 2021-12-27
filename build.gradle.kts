@@ -23,7 +23,7 @@ sourceSets.main {
     java.srcDirs("src/main/java")
 }
 
-val exposedVersion = "0.34.1"
+val exposedVersion = "0.36.1"
 
 dependencies {
     implementation("cc.rbbl:program-parameters-jvm:1.0.3")
@@ -35,10 +35,10 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
-    implementation("org.flywaydb:flyway-core:8.1.0")
+    implementation("org.flywaydb:flyway-core:8.2.3")
 
     //LOGGING
-    implementation("ch.qos.logback:logback-classic:1.2.7")
+    implementation("ch.qos.logback:logback-classic:1.2.9")
 
     //Testing
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
