@@ -6,6 +6,18 @@ genre-police is a discord bot, that posts the genres to spotify links that are p
 
 ## usage
 
+just send spotify links in any channel or via dm and the bot will answer with the genres.
+this only works for `tracks`, `albums` and `artists`.
+
+to disable the response just mention `genre` somewhere in the message.
+
+if the bot sends a message that is not useful,
+or you simply don't want the response then you can react with the waste basked emoji.
+
+![image](media/usage_screenshot.png)
+
+## run it
+
 you need to supply the bot with the appropriate tokes to access both the spotify and the discord api, so you need to
 register as a developer on both platforms, if you want to run this bot.
 
