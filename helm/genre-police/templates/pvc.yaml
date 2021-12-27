@@ -1,0 +1,15 @@
+{{ if .Values.db.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "genre-police.fullname" . }}-db-volume
+  labels:
+    {{- include "genre-police.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.db.storageClass | quote }}
+  resources:
+    requests:
+      storage: 5Gi
+{{ end }}

@@ -45,6 +45,7 @@ genre_police:
 db:
   enabled: true
   replicaCount: 1
+  storageClass: ""
 
   service:
     type: ClusterIP
