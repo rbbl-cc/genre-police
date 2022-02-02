@@ -1,6 +1,7 @@
 stages:
   - build
   - docker
+  - helm
 
 build:
   stage: build
@@ -14,36 +15,68 @@ build:
 .docker:
   stage: docker
   image: docker:19.03.12
+  needs:
+    - job: build
   services:
     - docker:19.03.12-dind
   variables:
     # Use TLS https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-enabled
     DOCKER_HOST: tcp://docker:2376
     DOCKER_TLS_CERTDIR: "/certs"
-
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-
   script:
     - docker pull $CI_REGISTRY_IMAGE:latest || true
     - docker build --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --tag $CI_REGISTRY_IMAGE:latest .
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
     - docker push $CI_REGISTRY_IMAGE:latest
 
+.release:
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
+
+.release-candidate:
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+-RC\d+$/'
 
 docker-release:
   extends:
     - .docker
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
+    - .release
 
-docker-release-candidat:
+docker-release-candidate:
   extends:
     - .docker
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+-RC\d+$/'
+    - .release-candidate
   script:
     - docker pull $CI_REGISTRY_IMAGE:dev || true
     - docker build --cache-from $CI_REGISTRY_IMAGE:dev --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --tag $CI_REGISTRY_IMAGE:dev .
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
     - docker push $CI_REGISTRY_IMAGE:dev
+
+.helm:
+  stage: helm
+  image: fedora
+  before_script:
+    - dnf in -y openssl
+    - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    - chmod 700 get_helm.sh
+    - ./get_helm.sh
+    - helm package helm/genre-police
+    - mv genre-police-*.tgz genre-police.tgz
+
+helm-publish-release:
+  stage: helm
+  extends:
+    - .release
+    - .helm
+  script:
+    - 'curl --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form "chart=@genre-police.tgz" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/stable/charts"'
+
+helm-publish-release-candidate:
+  stage: helm
+  extends:
+    - .release-candidate
+    - .helm
+  script:
+    - 'curl --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form "chart=@genre-police.tgz" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/dev/charts"'
