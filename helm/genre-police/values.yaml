@@ -46,6 +46,7 @@ db:
   enabled: true
   replicaCount: 1
   storageClass: ""
+  size: 5Gi
 
   service:
     type: ClusterIP
