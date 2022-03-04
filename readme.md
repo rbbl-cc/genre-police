@@ -36,17 +36,17 @@ register as a developer on both platforms, if you want to run this bot.
 - DB_USER
 - DB_PASSWORD
 
+### helm
+
 example:
 
 ```shell
-java -jar genre-police-1.5.0.jar \
-  DISCORD_TOKEN=token \
-  SPOTIFY_CLIENT_ID=id \
-  SPOTIFY_CLIENT_SECRET=secret \
-  JDBC_URL=url \ 
-  DB_USER=userName \
-  DB_PASSWORD=password
-``` 
+helm repo add genre-police https://gitlab.com/api/v4/projects/23986370/packages/helm/stable
+helm upgrade -i gp genre-police/genre-police \
+  --set genre_police.settings.DISCORD_TOKEN=token \
+  --set genre_police.settings.SPOTIFY_CLIENT_ID=id \
+  --set genre_police.settings.SPOTIFY_CLIENT_SECRET=secret
+```
 
 ### docker/container
 
