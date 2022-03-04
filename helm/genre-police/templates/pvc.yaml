@@ -11,5 +11,5 @@ spec:
   storageClassName: {{ .Values.db.storageClass | quote }}
   resources:
     requests:
-      storage: 5Gi
+      storage: {{ .Values.db.size }}
 {{ end }}
