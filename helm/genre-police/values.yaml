@@ -9,10 +9,7 @@ genre_police:
     repository: registry.gitlab.com/rbbl/genre-police
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: ""
-
-  nameOverride: ""
-  fullnameOverride: ""
+    tag: "latest"
 
   podAnnotations: {}
 
@@ -56,9 +53,6 @@ db:
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     tag: "14"
-
-  nameOverride: ""
-  fullnameOverride: ""
 
   podAnnotations: {}
 

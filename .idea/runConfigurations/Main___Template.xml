@@ -1,0 +1,23 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Main - Template" type="Application" factoryName="Application">
+    <envs>
+      <env name="SPOTIFY_CLIENT_ID" value="id" />
+      <env name="SPOTIFY_CLIENT_SECRET" value="secret" />
+      <env name="DISCORD_TOKEN" value="token" />
+      <env name="JDBC_URL" value="jdbc:postgresql://localhost:5432/genre_police" />
+      <env name="DB_USER" value="user" />
+      <env name="DB_PASSWORD" value="password" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="cc.rbbl.MainKt" />
+    <module name="genre-police.main" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="cc.rbbl.link_handlers.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

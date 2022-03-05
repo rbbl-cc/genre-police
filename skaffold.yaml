@@ -1,0 +1,18 @@
+apiVersion: skaffold/v2beta23
+kind: Config
+build:
+  artifacts:
+    - image: genre-police # must match in artifactOverrides
+deploy:
+  helm:
+    releases:
+      - name: gp
+        chartPath: helm/genre-police
+        artifactOverrides:
+          genre_police.image: genre-police # no tag present!
+        setValueTemplates:
+          genre_police.settings.DISCORD_TOKEN: "{{.DISCORD_TOKEN}}"
+          genre_police.settings.SPOTIFY_CLIENT_ID: "{{.SPOTIFY_CLIENT_ID}}"
+          genre_police.settings.SPOTIFY_CLIENT_SECRET: "{{.SPOTIFY_CLIENT_SECRET}}"
+        imageStrategy:
+          helm: {}

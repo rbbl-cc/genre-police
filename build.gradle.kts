@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     java
     kotlin("jvm") version "1.5.31"
@@ -46,6 +48,10 @@ dependencies {
 
 tasks.getByName<Test>("test") {
     useJUnitPlatform()
+}
+
+tasks.getByName<ShadowJar>("shadowJar") {
+    archiveFileName.set("genre-police.jar")
 }
 
 
