@@ -40,6 +40,8 @@ docker-build:
     - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
 
 docker-publish-release:
+  needs:
+    - docker-build
   extends:
     - .docker
     - .release
@@ -51,6 +53,8 @@ docker-publish-release:
     - docker push rbbl/genre-police:latest
 
 docker-publish-release-candidate:
+  needs:
+    - docker-build
   extends:
     - .docker
     - .release-candidate
