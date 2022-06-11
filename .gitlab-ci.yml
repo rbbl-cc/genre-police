@@ -14,22 +14,13 @@ build:
 
 .docker:
   stage: docker
-  image: docker:19.03.12
+  image: docker
   needs:
     - job: build
   services:
-    - docker:19.03.12-dind
-  variables:
-    # Use TLS https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-enabled
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_CERTDIR: "/certs"
+    - docker:dind
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-  script:
-    - docker pull $CI_REGISTRY_IMAGE:latest || true
-    - docker build --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --tag $CI_REGISTRY_IMAGE:latest .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
-    - docker push $CI_REGISTRY_IMAGE:latest
 
 .release:
   rules:
@@ -39,20 +30,36 @@ build:
   rules:
     - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+-RC\d+$/'
 
-docker-release:
+docker-build:
+  extends: .docker
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+-RC\d+$/'
+    - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
+
+docker-publish-release:
   extends:
     - .docker
     - .release
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA rbbl/genre-police:$CI_COMMIT_TAG
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA rbbl/genre-police:latest
+    - docker push rbbl/genre-police:$CI_COMMIT_TAG
+    - docker push rbbl/genre-police:latest
 
-docker-release-candidate:
+docker-publish-release-candidate:
   extends:
     - .docker
     - .release-candidate
   script:
-    - docker pull $CI_REGISTRY_IMAGE:dev || true
-    - docker build --cache-from $CI_REGISTRY_IMAGE:dev --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --tag $CI_REGISTRY_IMAGE:dev .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
-    - docker push $CI_REGISTRY_IMAGE:dev
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA rbbl/genre-police:$CI_COMMIT_TAG
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA rbbl/genre-police:dev
+    - docker push rbbl/genre-police:$CI_COMMIT_TAG
+    - docker push rbbl/genre-police:dev
 
 .helm:
   stage: helm
