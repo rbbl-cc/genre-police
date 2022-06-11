@@ -6,7 +6,7 @@ genre_police:
   replicaCount: 1
 
   image:
-    repository: registry.gitlab.com/rbbl/genre-police
+    repository: rbbl/genre-police
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     tag: "latest"

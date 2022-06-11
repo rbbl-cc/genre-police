@@ -25,6 +25,9 @@ sourceSets.main {
     java.srcDirs("src/main/java")
 }
 
+val compileKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
+compileKotlin.kotlinOptions.jvmTarget = "11"
+
 val exposedVersion = "0.36.1"
 
 dependencies {
