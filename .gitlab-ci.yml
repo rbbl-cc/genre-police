@@ -10,13 +10,11 @@ build:
     - gradle build
   artifacts:
     paths:
-      - build/libs/genre-police-*-all.jar
+      - build/libs/genre-police.jar
 
 .docker:
   stage: docker
   image: docker
-  needs:
-    - job: build
   services:
     - docker:dind
   before_script:
@@ -32,6 +30,8 @@ build:
 
 docker-build:
   extends: .docker
+  needs:
+    - build
   script:
     - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA .
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
