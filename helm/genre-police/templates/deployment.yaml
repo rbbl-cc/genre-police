@@ -100,10 +100,12 @@ spec:
           resources:
             {{- toYaml .Values.db.resources | nindent 12 }}
           volumeMounts:
-            - mountPath: "/var/lib/postgresql/data"
-              name: {{ include "genre-police.fullname" . }}-db-volume
+            - mountPath: "/var/lib/postgresql"
+              name: db-volume-claim
       volumes:
-        - name: {{ include "genre-police.fullname" . }}-db-volume
+        - name: db-volume-claim
+          persistentVolumeClaim:
+            claimName: {{ include "genre-police.fullname" . }}-db-volume
       {{- with .Values.db.nodeSelector }}
       nodeSelector:
       {{- toYaml . | nindent 8 }}
