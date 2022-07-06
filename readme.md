@@ -40,7 +40,7 @@ register as a developer on both platforms, if you want to run this bot.
 example:
 
 ```shell
-helm repo add genre-police https://gitlab.com/api/v4/projects/23986370/packages/helm/stable
+helm repo add genre-police https://gitlab.com/api/v4/projects/23986370/packages/helm/stable && \
 helm upgrade -i gp genre-police/genre-police \
   --set genre_police.settings.DISCORD_TOKEN=token \
   --set genre_police.settings.SPOTIFY_CLIENT_ID=id \
@@ -52,7 +52,7 @@ helm upgrade -i gp genre-police/genre-police \
 example:
 
 ```shell
-docker run -d --name gp_1.5.0 registry.gitlab.com/rbbl/genre-police:latest \
+docker run -d --name gp rbbl/genre-police \
   DISCORD_TOKEN=token \
   SPOTIFY_CLIENT_ID=id \
   SPOTIFY_CLIENT_SECRET=secret \
@@ -70,8 +70,8 @@ docker run -d --name gp_1.5.0 registry.gitlab.com/rbbl/genre-police:latest \
 example:
 
 ```shell
-./gradlew build
-java -jar target/genre-police-1.5.0.jar \
+./gradlew build && \
+java -jar build/libs/genre-police.jar \
   DISCORD_TOKEN=token \
   SPOTIFY_CLIENT_ID=id \
   SPOTIFY_CLIENT_SECRET=secret \
