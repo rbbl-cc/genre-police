@@ -1,8 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    java
-    kotlin("jvm") version "1.5.31"
+    kotlin("jvm") version "1.7.10"
     application
     id("com.github.johnrengelman.shadow") version "7.0.0"
 }
@@ -28,15 +27,20 @@ sourceSets.main {
 val compileKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
 compileKotlin.kotlinOptions.jvmTarget = "11"
 
+tasks.withType<JavaCompile> {
+    sourceCompatibility = "11"
+    targetCompatibility = "11"
+}
+
 val exposedVersion = "0.36.1"
 
 dependencies {
     implementation("cc.rbbl:program-parameters-jvm:1.0.3")
-    implementation("net.dv8tion:JDA:4.2.1_265")
-    implementation("com.adamratzman:spotify-api-kotlin-core:3.8.4")
+    implementation("net.dv8tion:JDA:4.4.0_350")
+    implementation("com.adamratzman:spotify-api-kotlin-core:3.8.6")
 
     //Persistence
-    implementation("org.postgresql:postgresql:42.3.1")
+    implementation("org.postgresql:postgresql:42.3.6")
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
