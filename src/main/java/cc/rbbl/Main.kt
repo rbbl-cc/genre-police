@@ -2,12 +2,22 @@ package cc.rbbl
 
 import cc.rbbl.program_parameters_jvm.ParameterDefinition
 import cc.rbbl.program_parameters_jvm.ParameterHolder
+import io.ktor.application.*
+import io.ktor.response.*
+import io.ktor.routing.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import ktor_health_check.Health
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.utils.cache.CacheFlag
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.transactions.transaction
 
 fun main(args: Array<String>) {
     val params = ParameterHolder(
@@ -33,14 +43,44 @@ fun main(args: Array<String>) {
     JDABuilder.create(
         params["DISCORD_TOKEN"], GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES,
         GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.DIRECT_MESSAGE_REACTIONS
-    )
-        .disableCache(
-            CacheFlag.ACTIVITY, CacheFlag.VOICE_STATE, CacheFlag.EMOTE,
-            CacheFlag.CLIENT_STATUS, CacheFlag.ONLINE_STATUS
-        )
-        .addEventListeners(GenrePolice(params))
+    ).disableCache(
+        CacheFlag.ACTIVITY, CacheFlag.VOICE_STATE, CacheFlag.EMOTE,
+        CacheFlag.CLIENT_STATUS, CacheFlag.ONLINE_STATUS
+    ).addEventListeners(GenrePolice(params))
         .setActivity(Activity.watching("Spotify Links"))
         .build()
+
+    runBlocking {
+        launch {
+            transaction {
+                HealthAttributes.database = !connection.isClosed
+            }
+            delay(60000) //one minute
+        }
+        launch {
+            embeddedServer(Netty, port = 8080) {
+                routing {
+                    get("/") {
+                        call.respondText("Hello, world!")
+                    }
+                }
+                install(Health) {
+                    readyCheck("database") {
+                        HealthAttributes.database
+                    }
+                    healthCheck("database") {
+                        HealthAttributes.database
+                    }
+                    readyCheck("discord") {
+                        HealthAttributes.discord
+                    }
+                    healthCheck("discord") {
+                        HealthAttributes.discord
+                    }
+                }
+            }.start(wait = true)
+        }
+    }
 }
 
 private fun handleDbMigration(parameters: ParameterHolder) {

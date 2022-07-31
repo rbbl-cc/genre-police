@@ -7,10 +7,7 @@ import cc.rbbl.persistence.MessageDao
 import cc.rbbl.persistence.MessageEntity
 import cc.rbbl.program_parameters_jvm.ParameterHolder
 import net.dv8tion.jda.api.entities.Message
-import net.dv8tion.jda.api.events.DisconnectEvent
-import net.dv8tion.jda.api.events.ReconnectedEvent
-import net.dv8tion.jda.api.events.ResumedEvent
-import net.dv8tion.jda.api.events.ShutdownEvent
+import net.dv8tion.jda.api.events.*
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
@@ -34,8 +31,15 @@ class GenrePolice(parameters: ParameterHolder) : ListenerAdapter(),
         messageHandlers = arrayOf(SpotifyMessageHandler(parameters))
     }
 
+    override fun onReady(event: ReadyEvent) {
+        super.onReady(event)
+        HealthAttributes.discord = true
+        isConnected = true
+    }
+
     override fun onDisconnect(event: DisconnectEvent) {
         super.onDisconnect(event)
+        HealthAttributes.discord = false
         isConnected = false
         val thread = Thread(this)
         log.error("Disconnected. Starting reconnect timeout of $RECONNECTION_TIMEOUT mills")
@@ -44,12 +48,14 @@ class GenrePolice(parameters: ParameterHolder) : ListenerAdapter(),
 
     override fun onReconnected(event: ReconnectedEvent) {
         super.onReconnected(event)
+        HealthAttributes.discord = true
         isConnected = true
         log.info("Reconnected!")
     }
 
     override fun onResumed(event: ResumedEvent) {
         super.onResumed(event)
+        HealthAttributes.discord = true
         isConnected = true
         log.info("Reconnected!")
     }

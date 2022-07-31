@@ -14,6 +14,7 @@ repositories {
     mavenLocal()
     maven("https://gitlab.com/api/v4/projects/28863171/packages/maven")
     maven("https://m2.dv8tion.net/releases")
+    maven("https://jitpack.io")
 }
 
 application {
@@ -33,11 +34,16 @@ tasks.withType<JavaCompile> {
 }
 
 val exposedVersion = "0.36.1"
+val ktorVersion = "1.6.8"
 
 dependencies {
     implementation("cc.rbbl:program-parameters-jvm:1.0.3")
     implementation("net.dv8tion:JDA:4.4.0_350")
     implementation("com.adamratzman:spotify-api-kotlin-core:3.8.6")
+    implementation("io.ktor:ktor-server-core:$ktorVersion")
+    implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    implementation("com.github.zensum:ktor-health-check:011a5a8")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
     //Persistence
     implementation("org.postgresql:postgresql:42.3.6")
