@@ -43,38 +43,40 @@ fun main(args: Array<String>) {
 
     StatsRepository.jda = jda
 
-    runBlocking {
-        launch {
-            transaction {
-                HealthAttributes.database = !connection.isClosed
+    if(config.webserverEnabled) {
+        runBlocking {
+            launch {
+                transaction {
+                    HealthAttributes.database = !connection.isClosed
+                }
+                delay(10000) //10 seconds
             }
-            delay(60000) //one minute
-        }
-        launch {
-            embeddedServer(Netty, port = 8080) {
-                install(ContentNegotiation) {
-                    json()
-                }
-                install(Health) {
-                    readyCheck("database") {
-                        HealthAttributes.database
+            launch {
+                embeddedServer(Netty, port = config.port) {
+                    install(ContentNegotiation) {
+                        json()
                     }
-                    healthCheck("database") {
-                        HealthAttributes.database
+                    install(Health) {
+                        readyCheck("database") {
+                            HealthAttributes.database
+                        }
+                        healthCheck("database") {
+                            HealthAttributes.database
+                        }
+                        readyCheck("discord") {
+                            HealthAttributes.discord
+                        }
+                        healthCheck("discord") {
+                            HealthAttributes.discord
+                        }
                     }
-                    readyCheck("discord") {
-                        HealthAttributes.discord
+                    routing {
+                        get("/stats") {
+                            call.respond(StatsRepository.getStats())
+                        }
                     }
-                    healthCheck("discord") {
-                        HealthAttributes.discord
-                    }
-                }
-                routing {
-                    get("/stats") {
-                        call.respond(StatsRepository.getStats())
-                    }
-                }
-            }.start(wait = true)
+                }.start(wait = true)
+            }
         }
     }
 }

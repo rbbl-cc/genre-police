@@ -9,8 +9,27 @@ class StatsRepository {
     companion object {
         lateinit var jda: JDA
 
-        fun getStats(): StatsResult = transaction {
-            StatsResult(jda.guilds.size, MessageDao.count())
+        private val config: ProgramConfig = ProgramConfig()
+        private var lastResult: StatsResult? = null
+        private var timestamp = System.currentTimeMillis()
+
+        fun getStats(): StatsResult {
+            lastResult.apply {
+                if (this == null) {
+                    transaction {
+                        lastResult = StatsResult(jda.guilds.size, MessageDao.count())
+                        timestamp = System.currentTimeMillis()
+                    }
+                } else {
+                    if (System.currentTimeMillis() - timestamp >= config.statsCacheTimeMs) {
+                        transaction {
+                            lastResult = StatsResult(jda.guilds.size, MessageDao.count())
+                            timestamp = System.currentTimeMillis()
+                        }
+                    }
+                }
+            }
+            return lastResult!!
         }
     }
 }
