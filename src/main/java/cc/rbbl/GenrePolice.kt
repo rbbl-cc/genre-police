@@ -5,7 +5,6 @@ import cc.rbbl.exceptions.ParsingException
 import cc.rbbl.link_handlers.SpotifyMessageHandler
 import cc.rbbl.persistence.MessageDao
 import cc.rbbl.persistence.MessageEntity
-import cc.rbbl.program_parameters_jvm.ParameterHolder
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.events.*
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent
@@ -21,7 +20,7 @@ import org.slf4j.LoggerFactory
 import java.util.stream.Collectors
 import kotlin.system.exitProcess
 
-class GenrePolice(parameters: ParameterHolder) : ListenerAdapter(),
+class GenrePolice(config: ProgramConfig) : ListenerAdapter(),
     Runnable {
     private val statsCommand = "stats"
     private val okErrorResponses = listOf(ErrorResponse.UNKNOWN_MESSAGE, ErrorResponse.UNKNOWN_CHANNEL)
@@ -30,7 +29,7 @@ class GenrePolice(parameters: ParameterHolder) : ListenerAdapter(),
     private val messageHandlers: Array<MessageHandler>
 
     init {
-        messageHandlers = arrayOf(SpotifyMessageHandler(parameters))
+        messageHandlers = arrayOf(SpotifyMessageHandler(config))
     }
 
     override fun onReady(event: ReadyEvent) {

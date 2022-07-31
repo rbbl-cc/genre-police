@@ -2,20 +2,20 @@ package cc.rbbl.link_handlers
 
 import cc.rbbl.GenreResponse
 import cc.rbbl.MessageHandler
+import cc.rbbl.ProgramConfig
 import cc.rbbl.exceptions.NoGenreFoundException
 import cc.rbbl.exceptions.ParsingException
-import cc.rbbl.program_parameters_jvm.ParameterHolder
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.spotifyAppApi
 import kotlinx.coroutines.runBlocking
 import java.util.regex.Pattern
 
-class SpotifyMessageHandler(parameters: ParameterHolder) : MessageHandler {
+class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
     private var spotifyApi: SpotifyAppApi
 
     init {
         runBlocking {
-            spotifyApi = spotifyAppApi(parameters["SPOTIFY_CLIENT_ID"]!!, parameters["SPOTIFY_CLIENT_SECRET"]!!).build()
+            spotifyApi = spotifyAppApi(config.spotifyClientId, config.spotifyClientSecret).build()
         }
     }
 

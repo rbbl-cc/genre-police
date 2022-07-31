@@ -1,7 +1,5 @@
 package cc.rbbl
 
-import cc.rbbl.program_parameters_jvm.ParameterDefinition
-import cc.rbbl.program_parameters_jvm.ParameterHolder
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.response.*
@@ -22,33 +20,24 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun main(args: Array<String>) {
-    val params = ParameterHolder(
-        setOf(
-            ParameterDefinition("DISCORD_TOKEN", caseSensitive = false),
-            ParameterDefinition("SPOTIFY_CLIENT_ID", caseSensitive = false),
-            ParameterDefinition("SPOTIFY_CLIENT_SECRET", caseSensitive = false),
-            ParameterDefinition("DB_USER", caseSensitive = false),
-            ParameterDefinition("DB_PASSWORD", caseSensitive = false),
-            ParameterDefinition("JDBC_URL", caseSensitive = false)
-        )
-    )
-    params.loadParametersFromEnvironmentVariables()
-    params.loadParameters(args)
-    params.checkParameterCompleteness()
+    ProgramConfig.parameters.loadParametersFromEnvironmentVariables()
+    ProgramConfig.parameters.loadParameters(args)
+    ProgramConfig.parameters.checkParameterCompleteness()
 
-    handleDbMigration(params)
+    val config = ProgramConfig()
+    handleDbMigration(config)
 
-    Database.connect(params["JDBC_URL"]!!, "org.postgresql.Driver", params["DB_USER"]!!, params["DB_PASSWORD"]!!)
+    Database.connect(config.jdbcUrl, "org.postgresql.Driver", config.dbUser, config.dbPassword)
 
     // We only need 2 intents in this bot. We only respond to messages in guilds and private channels.
     // All other events will be disabled.
     val jda = JDABuilder.create(
-        params["DISCORD_TOKEN"], GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES,
+        config.discordToken, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES,
         GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.DIRECT_MESSAGE_REACTIONS
     ).disableCache(
         CacheFlag.ACTIVITY, CacheFlag.VOICE_STATE, CacheFlag.EMOTE,
         CacheFlag.CLIENT_STATUS, CacheFlag.ONLINE_STATUS
-    ).addEventListeners(GenrePolice(params))
+    ).addEventListeners(GenrePolice(config))
         .setActivity(Activity.watching("Spotify Links"))
         .build()
 
@@ -63,7 +52,7 @@ fun main(args: Array<String>) {
         }
         launch {
             embeddedServer(Netty, port = 8080) {
-                install(ContentNegotiation){
+                install(ContentNegotiation) {
                     json()
                 }
                 install(Health) {
@@ -90,11 +79,11 @@ fun main(args: Array<String>) {
     }
 }
 
-private fun handleDbMigration(parameters: ParameterHolder) {
+private fun handleDbMigration(config: ProgramConfig) {
     val flyway = Flyway.configure().dataSource(
-        parameters["JDBC_URL"],
-        parameters["DB_USER"],
-        parameters["DB_PASSWORD"]
+        config.jdbcUrl,
+        config.dbUser,
+        config.dbPassword
     ).load()
     flyway.migrate()
 }
