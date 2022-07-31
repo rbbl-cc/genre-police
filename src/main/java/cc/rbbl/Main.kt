@@ -3,8 +3,10 @@ package cc.rbbl
 import cc.rbbl.program_parameters_jvm.ParameterDefinition
 import cc.rbbl.program_parameters_jvm.ParameterHolder
 import io.ktor.application.*
+import io.ktor.features.*
 import io.ktor.response.*
 import io.ktor.routing.*
+import io.ktor.serialization.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import kotlinx.coroutines.delay
@@ -61,10 +63,8 @@ fun main(args: Array<String>) {
         }
         launch {
             embeddedServer(Netty, port = 8080) {
-                routing {
-                    get("/") {
-                        call.respondText("Hello, world!")
-                    }
+                install(ContentNegotiation){
+                    json()
                 }
                 install(Health) {
                     readyCheck("database") {
@@ -78,6 +78,11 @@ fun main(args: Array<String>) {
                     }
                     healthCheck("discord") {
                         HealthAttributes.discord
+                    }
+                }
+                routing {
+                    get("/stats") {
+                        call.respond(StatsRepository.getStats())
                     }
                 }
             }.start(wait = true)

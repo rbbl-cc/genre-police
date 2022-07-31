@@ -2,6 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     kotlin("jvm") version "1.7.10"
+    kotlin("plugin.serialization") version "1.7.10"
     application
     id("com.github.johnrengelman.shadow") version "7.0.0"
 }
@@ -42,6 +43,7 @@ dependencies {
     implementation("com.adamratzman:spotify-api-kotlin-core:3.8.6")
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    implementation("io.ktor:ktor-serialization:$ktorVersion")
     implementation("com.github.zensum:ktor-health-check:011a5a8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
