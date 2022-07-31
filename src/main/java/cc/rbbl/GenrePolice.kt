@@ -8,6 +8,7 @@ import cc.rbbl.persistence.MessageEntity
 import cc.rbbl.program_parameters_jvm.ParameterHolder
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.events.*
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
@@ -22,6 +23,7 @@ import kotlin.system.exitProcess
 
 class GenrePolice(parameters: ParameterHolder) : ListenerAdapter(),
     Runnable {
+    private val statsCommand = "stats"
     private val okErrorResponses = listOf(ErrorResponse.UNKNOWN_MESSAGE, ErrorResponse.UNKNOWN_CHANNEL)
     private var isConnected = true
     private val log = LoggerFactory.getLogger(GenrePolice::class.java)
@@ -33,6 +35,7 @@ class GenrePolice(parameters: ParameterHolder) : ListenerAdapter(),
 
     override fun onReady(event: ReadyEvent) {
         super.onReady(event)
+        event.jda.upsertCommand(statsCommand, "Get global Stats of the Genre-Police Bot.").queue()
         HealthAttributes.discord = true
         isConnected = true
     }
@@ -126,6 +129,15 @@ class GenrePolice(parameters: ParameterHolder) : ListenerAdapter(),
         }
     }
 
+    override fun onSlashCommand(event: SlashCommandEvent) {
+        if (event.name == statsCommand) {
+            event.deferReply().queue() // Tell discord we received the command, send a thinking... message to the user
+            val messageCount: Long = transaction {
+                MessageDao.count()
+            }
+            event.hook.sendMessage("**Servers**: ${event.jda.guilds.size}\n**Messages**: $messageCount").queue()
+        }
+    }
 
     override fun run() {
         try {
@@ -151,12 +163,15 @@ class GenrePolice(parameters: ParameterHolder) : ListenerAdapter(),
                     is NoGenreFoundException -> {
                         " Spotify has no genre for that Item"
                     }
+
                     is IllegalArgumentException -> {
                         " unknown ID"
                     }
+
                     is ParsingException -> {
                         " broken Link"
                     }
+
                     else -> {
                         " unknown Error"
                     }
