@@ -44,6 +44,14 @@ spec:
             - name: DB_PASSWORD
               value: {{ quote .Values.global.postgresql.auth.password }}
             {{ end }}
+          readinessProbe:
+            httpGet:
+              port: 8080
+              path: readyz
+          livenessProbe:
+            httpGet:
+              port: 8080
+              path: healthz
           resources:
             {{- toYaml .Values.genre_police.resources | nindent 12 }}
       {{- with .Values.genre_police.nodeSelector }}
