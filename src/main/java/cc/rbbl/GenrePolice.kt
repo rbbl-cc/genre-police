@@ -132,10 +132,8 @@ class GenrePolice(parameters: ParameterHolder) : ListenerAdapter(),
     override fun onSlashCommand(event: SlashCommandEvent) {
         if (event.name == statsCommand) {
             event.deferReply().queue() // Tell discord we received the command, send a thinking... message to the user
-            val messageCount: Long = transaction {
-                MessageDao.count()
-            }
-            event.hook.sendMessage("**Servers**: ${event.jda.guilds.size}\n**Messages**: $messageCount").queue()
+            val result = StatsRepository.getStats()
+            event.hook.sendMessage("**Servers**: ${result.serverCount}\n**Messages**: ${result.messageCount}").queue()
         }
     }
 

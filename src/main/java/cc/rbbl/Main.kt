@@ -40,7 +40,7 @@ fun main(args: Array<String>) {
 
     // We only need 2 intents in this bot. We only respond to messages in guilds and private channels.
     // All other events will be disabled.
-    JDABuilder.create(
+    val jda = JDABuilder.create(
         params["DISCORD_TOKEN"], GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES,
         GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.DIRECT_MESSAGE_REACTIONS
     ).disableCache(
@@ -49,6 +49,8 @@ fun main(args: Array<String>) {
     ).addEventListeners(GenrePolice(params))
         .setActivity(Activity.watching("Spotify Links"))
         .build()
+
+    StatsRepository.jda = jda
 
     runBlocking {
         launch {
