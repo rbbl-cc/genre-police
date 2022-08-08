@@ -22,6 +22,10 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.genre_police.image.repository }}:{{ .Values.genre_police.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.genre_police.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
           env:
             - name: DISCORD_TOKEN
               value: {{ quote .Values.genre_police.settings.DISCORD_TOKEN }}
@@ -29,6 +33,8 @@ spec:
               value: {{ quote .Values.genre_police.settings.SPOTIFY_CLIENT_ID }}
             - name: SPOTIFY_CLIENT_SECRET
               value: {{ quote .Values.genre_police.settings.SPOTIFY_CLIENT_SECRET }}
+            - name: PORT
+              value: "80"
             {{ if not .Values.postgresql.enabled }}
             - name: JDBC_URL
               value: {{ quote .Values.genre_police.settings.JDBC_URL }}
@@ -46,11 +52,11 @@ spec:
             {{ end }}
           readinessProbe:
             httpGet:
-              port: 8080
+              port: 80
               path: readyz
           livenessProbe:
             httpGet:
-              port: 8080
+              port: 80
               path: healthz
           resources:
             {{- toYaml .Values.genre_police.resources | nindent 12 }}
