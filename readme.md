@@ -13,7 +13,8 @@ just send spotify links in any channel or via dm and the bot will answer with th
 
 to disable the response just mention `genre` somewhere in the message.
 
-if the bot sends a message that is not useful, or you simply don't want the response then you can react with the wastebasket (🗑) emoji.
+if the bot sends a message that is not useful, or you simply don't want the response then you can react with the
+wastebasket (🗑) emoji.
 
 ![image](media/usage_screenshot.png)
 

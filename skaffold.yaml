@@ -15,4 +15,4 @@ deploy:
           genre_police.settings.SPOTIFY_CLIENT_ID: "{{.SPOTIFY_CLIENT_ID}}"
           genre_police.settings.SPOTIFY_CLIENT_SECRET: "{{.SPOTIFY_CLIENT_SECRET}}"
         imageStrategy:
-          helm: {}
+          helm: { }

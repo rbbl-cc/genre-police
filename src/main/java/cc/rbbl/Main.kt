@@ -43,7 +43,7 @@ fun main(args: Array<String>) {
 
     StatsRepository.jda = jda
 
-    if(config.webserverEnabled) {
+    if (config.webserverEnabled) {
         runBlocking {
             launch {
                 transaction {
