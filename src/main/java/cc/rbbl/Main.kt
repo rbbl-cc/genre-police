@@ -56,7 +56,9 @@ fun main(args: Array<String>) {
                     install(ContentNegotiation) {
                         json()
                     }
-                    install(CORS)
+                    install(CORS){
+                        anyHost()
+                    }
                     install(Health) {
                         readyCheck("database") {
                             HealthAttributes.database
