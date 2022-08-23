@@ -56,6 +56,7 @@ fun main(args: Array<String>) {
                     install(ContentNegotiation) {
                         json()
                     }
+                    install(CORS)
                     install(Health) {
                         readyCheck("database") {
                             HealthAttributes.database
