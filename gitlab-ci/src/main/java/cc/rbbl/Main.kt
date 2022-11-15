@@ -5,32 +5,29 @@ import pcimcioch.gitlabci.dsl.gitlabCi
 import pcimcioch.gitlabci.dsl.job.WhenUploadType
 import java.io.FileWriter
 
+object Stages {
+    val Build = "build"
+    val Docker = "docker"
+    val Helm = "helm"
+    val Release = "release"
+}
+
 fun main() {
-    val test = FileWriter("../.gitlab-ci.yml")
-    gitlabCi(validate = true, writer = test) {
-        default {
-            image("openjdk:8u162")
-
-            cache("./gradle/wrapper", "./gradle/caches")
-
-            beforeScript("export GRADLE_USER_HOME=\$(pwd)/.gradle")
-        }
-
+    val writer = FileWriter("../.gitlab-ci.yml")
+    gitlabCi(validate = true, writer = writer) {
         stages {
-            +"test"
-            +"release"
+            +Stages.Build
+            +Stages.Docker
+            +Stages.Helm
+            +Stages.Release
         }
 
         job("build") {
-            stage = "test"
-            script("./gradlew clean build")
+            stage = Stages.Build
+            image("gradle:7.2.0-jdk11")
+            script("gradle build")
             artifacts {
-                whenUpload = WhenUploadType.ALWAYS
-                paths("build/test-results", "build/reports")
-                expireIn = Duration(days = 7)
-                reports {
-                    junit("build/test-results/test/TEST-*.xml")
-                }
+                paths("app/build/libs/genre-police.jar")
             }
         }
 
@@ -47,5 +44,5 @@ fun main() {
             }
         }
     }
-    test.close()
+    writer.close()
 }
