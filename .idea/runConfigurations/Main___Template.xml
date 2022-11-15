@@ -9,7 +9,7 @@
       <env name="DB_PASSWORD" value="password" />
     </envs>
     <option name="MAIN_CLASS_NAME" value="cc.rbbl.MainKt" />
-    <module name="genre-police.main" />
+    <module name="genre-police.app.main" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="cc.rbbl.link_handlers.*" />
