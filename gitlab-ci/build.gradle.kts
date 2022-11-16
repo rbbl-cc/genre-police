@@ -16,7 +16,7 @@ dependencies {
 
 
 application {
-    mainClass.set("cc.rbbl.MainKt")
+    mainClass.set("cc.rbbl.GitlabCiKt")
 }
 
 tasks.create("createCi") {
