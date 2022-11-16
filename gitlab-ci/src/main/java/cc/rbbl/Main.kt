@@ -53,7 +53,6 @@ fun main() {
         }
         +buildJob
 
-
         val dockerBaseJob = createJob(".docker") {
             stage = Stages.Docker
             image("docker")
@@ -62,10 +61,9 @@ fun main() {
         }
         +dockerBaseJob
 
-
         val dockerBuildJob = createJob("docker-build") {
-            extends(dockerBaseJob)
             needs(buildJob)
+            extends(dockerBaseJob)
             script(
                 "docker build -t \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA ./app",
                 "docker push \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA"
@@ -97,18 +95,6 @@ fun main() {
             rules = Rules.master
         }
 
-        job("docker-publish-release") {
-            needs(dockerBuildJob)
-            extends(dockerBaseJob)
-            script(
-                "docker pull \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA",
-                "docker tag \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA rbbl/genre-police:\$CI_COMMIT_TAG",
-                "docker login -u \$DOCKERHUB_USER -p \$DOCKERHUB_ACCESS_TOKEN",
-                "docker push rbbl/genre-police:\$CI_COMMIT_TAG"
-            )
-            rules = Rules.release
-        }
-
         job("docker-publish-release-candidate") {
             needs(dockerBuildJob)
             extends(dockerBaseJob)
@@ -122,6 +108,18 @@ fun main() {
                 "docker push \$JFROG_URL/genre-police-docker-local/genre-police:\$CI_COMMIT_TAG"
             )
             rules = Rules.releaseCandidate
+        }
+
+        job("docker-publish-release") {
+            needs(dockerBuildJob)
+            extends(dockerBaseJob)
+            script(
+                "docker pull \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA",
+                "docker tag \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA rbbl/genre-police:\$CI_COMMIT_TAG",
+                "docker login -u \$DOCKERHUB_USER -p \$DOCKERHUB_ACCESS_TOKEN",
+                "docker push rbbl/genre-police:\$CI_COMMIT_TAG"
+            )
+            rules = Rules.release
         }
 
         val helmBaseJob = createJob(".helm") {
@@ -142,21 +140,21 @@ fun main() {
 
         job("helm-publish-release") {
             extends(helmBaseJob)
-            rules = Rules.release
             script("curl --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form 'chart=@genre-police.tgz' \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/stable/charts")
+            rules = Rules.release
         }
 
         job("helm-publish-release-candidate") {
             extends(helmBaseJob)
-            rules = Rules.releaseCandidate
             script("curl --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form 'chart=@genre-police.tgz' \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/dev/charts")
+            rules = Rules.releaseCandidate
         }
 
         job("create-release") {
             stage = Stages.Release
             image("registry.gitlab.com/gitlab-org/release-cli:latest")
-            rules = Rules.release
             script("echo 'Running the release job.'")
+            rules = Rules.release
             release {
                 name = "\$CI_COMMIT_TAG"
                 tagName = "\$CI_COMMIT_TAG"
