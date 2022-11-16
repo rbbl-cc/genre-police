@@ -80,3 +80,7 @@ java -jar build/libs/genre-police.jar \
   DB_USER=userName \
   DB_PASSWORD=password
 ```
+
+## CI/CD Maintenance
+The Gitlab Ci Definition resides in the `gitlab-ci` Module and is witten in Kotlin. \
+To Render any Changes made there, as the actual `.gitlab-ci.yml`, you can use `./gradlew renderCi`.

@@ -19,6 +19,6 @@ application {
     mainClass.set("cc.rbbl.GitlabCiKt")
 }
 
-tasks.create("createCi") {
+tasks.create("renderCi") {
     dependsOn("run")
 }
