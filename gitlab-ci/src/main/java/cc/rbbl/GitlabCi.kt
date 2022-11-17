@@ -55,14 +55,13 @@ fun main() {
             beforeScript("docker login -u \$CI_REGISTRY_USER -p \$CI_REGISTRY_PASSWORD \$CI_REGISTRY")
         }
 
-        val dockerBuildJob = job("docker-build") {
+        val dockerBuildJob = dockerBuildJob(
+            "docker-build",
+            DockerTarget("\$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA", gitlabDockerCredentials),
+            "./app"
+        ) {
             needs(buildJob)
             stage = Stages.Build
-            extends(dockerBaseJob)
-            script(
-                "docker build -t \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA ./app",
-                "docker push \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA"
-            )
         }
 
         job("docker-publish-dev") {
