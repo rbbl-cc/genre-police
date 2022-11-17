@@ -1,7 +1,6 @@
 package cc.rbbl
 
 import pcimcioch.gitlabci.dsl.gitlabCi
-import pcimcioch.gitlabci.dsl.job.createJob
 import pcimcioch.gitlabci.dsl.job.createRules
 
 object Stages {
@@ -41,7 +40,7 @@ fun main() {
             +Stages.Release
         }
 
-        val buildJob = createJob("build") {
+        val buildJob = job("build") {
             stage = Stages.Build
             image("gradle:7.2.0-jdk11")
             script("gradle build")
@@ -49,16 +48,14 @@ fun main() {
                 paths("app/build/libs/genre-police.jar")
             }
         }
-        +buildJob
 
-        val dockerBaseJob = createJob(".docker") {
+        val dockerBaseJob = job(".docker") {
             image("docker")
             services("docker:dind")
             beforeScript("docker login -u \$CI_REGISTRY_USER -p \$CI_REGISTRY_PASSWORD \$CI_REGISTRY")
         }
-        +dockerBaseJob
 
-        val dockerBuildJob = createJob("docker-build") {
+        val dockerBuildJob = job("docker-build") {
             needs(buildJob)
             stage = Stages.Build
             extends(dockerBaseJob)
@@ -67,7 +64,6 @@ fun main() {
                 "docker push \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA"
             )
         }
-        +dockerBuildJob
 
         job("docker-publish-dev") {
             needs(dockerBuildJob)
@@ -124,7 +120,7 @@ fun main() {
             rules = Rules.release
         }
 
-        val helmBaseJob = createJob(".helm") {
+        val helmBaseJob = job(".helm") {
             stage = Stages.Publish
             image("fedora")
             beforeScript(
@@ -138,7 +134,6 @@ fun main() {
                 "mv genre-police-*.tgz genre-police.tgz"
             )
         }
-        +helmBaseJob
 
         job("helm-publish-release") {
             extends(helmBaseJob)
