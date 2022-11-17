@@ -6,8 +6,7 @@ import pcimcioch.gitlabci.dsl.job.createRules
 
 object Stages {
     const val Build = "build"
-    const val Docker = "docker"
-    const val Helm = "helm"
+    const val Publish = "publish"
     const val Release = "release"
 }
 
@@ -38,8 +37,7 @@ fun main() {
     gitlabCi(validate = true, "../.gitlab-ci.yml") {
         stages {
             +Stages.Build
-            +Stages.Docker
-            +Stages.Helm
+            +Stages.Publish
             +Stages.Release
         }
 
@@ -54,7 +52,6 @@ fun main() {
         +buildJob
 
         val dockerBaseJob = createJob(".docker") {
-            stage = Stages.Docker
             image("docker")
             services("docker:dind")
             beforeScript("docker login -u \$CI_REGISTRY_USER -p \$CI_REGISTRY_PASSWORD \$CI_REGISTRY")
@@ -63,6 +60,7 @@ fun main() {
 
         val dockerBuildJob = createJob("docker-build") {
             needs(buildJob)
+            stage = Stages.Build
             extends(dockerBaseJob)
             script(
                 "docker build -t \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA ./app",
@@ -73,6 +71,7 @@ fun main() {
 
         job("docker-publish-dev") {
             needs(dockerBuildJob)
+            stage = Stages.Publish
             extends(dockerBaseJob)
             script(
                 "docker pull \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA",
@@ -85,6 +84,7 @@ fun main() {
 
         job("docker-publish-master") {
             needs(dockerBuildJob)
+            stage = Stages.Publish
             extends(dockerBaseJob)
             script(
                 "docker pull \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA",
@@ -97,6 +97,7 @@ fun main() {
 
         job("docker-publish-release-candidate") {
             needs(dockerBuildJob)
+            stage = Stages.Publish
             extends(dockerBaseJob)
             script(
                 "docker pull \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA",
@@ -112,6 +113,7 @@ fun main() {
 
         job("docker-publish-release") {
             needs(dockerBuildJob)
+            stage = Stages.Publish
             extends(dockerBaseJob)
             script(
                 "docker pull \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA",
@@ -123,7 +125,7 @@ fun main() {
         }
 
         val helmBaseJob = createJob(".helm") {
-            stage = Stages.Helm
+            stage = Stages.Publish
             image("fedora")
             beforeScript(
                 "dnf in -y openssl",

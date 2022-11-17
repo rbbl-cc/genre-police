@@ -1,7 +1,6 @@
 "stages":
 - "build"
-- "docker"
-- "helm"
+- "publish"
 - "release"
 "build":
   image:
@@ -15,7 +14,6 @@
 ".docker":
   image:
     name: "docker"
-  stage: "docker"
   services:
   - name: "docker:dind"
   before_script:
@@ -23,6 +21,7 @@
 "docker-build":
   extends:
   - ".docker"
+  stage: "build"
   needs:
   - job: "build"
   script:
@@ -31,6 +30,7 @@
 "docker-publish-dev":
   extends:
   - ".docker"
+  stage: "publish"
   needs:
   - job: "docker-build"
   rules:
@@ -43,6 +43,7 @@
 "docker-publish-master":
   extends:
   - ".docker"
+  stage: "publish"
   needs:
   - job: "docker-build"
   rules:
@@ -55,6 +56,7 @@
 "docker-publish-release-candidate":
   extends:
   - ".docker"
+  stage: "publish"
   needs:
   - job: "docker-build"
   rules:
@@ -70,6 +72,7 @@
 "docker-publish-release":
   extends:
   - ".docker"
+  stage: "publish"
   needs:
   - job: "docker-build"
   rules:
@@ -82,7 +85,7 @@
 ".helm":
   image:
     name: "fedora"
-  stage: "helm"
+  stage: "publish"
   before_script:
   - "dnf in -y openssl"
   - "curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3"
