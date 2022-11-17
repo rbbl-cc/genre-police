@@ -32,6 +32,23 @@ object Rules {
     }
 }
 
+const val gitlabCiImage = "\$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA"
+
+val gitlabCiSource = DockerSource(gitlabCiImage, gitlabDockerCredentials)
+
+object Credentials {
+    val DockerHub = DockerCredentials("\$DOCKERHUB_USER", "\$DOCKERHUB_ACCESS_TOKEN")
+    val Jfrog = DockerCredentials("\$JFROG_USERNAME", "\$JFROG_API_KEY", "\$JFROG_URL")
+}
+
+object Targets {
+    val DockerHubDev = DockerTarget("rbbl/genre-police:dev", Credentials.DockerHub)
+    val DockerHubLatest = DockerTarget("rbbl/genre-police:latest", Credentials.DockerHub)
+    val DockerHubTagged = DockerTarget("rbbl/genre-police:\$CI_COMMIT_TAG", Credentials.DockerHub)
+    val JfrogTagged =
+        DockerTarget("\$JFROG_URL/genre-police-docker-local/genre-police:\$CI_COMMIT_TAG", Credentials.Jfrog)
+}
+
 fun main() {
     gitlabCi(validate = true, "../.gitlab-ci.yml") {
         stages {
@@ -49,73 +66,48 @@ fun main() {
             }
         }
 
-        val dockerBaseJob = job(".docker") {
-            image("docker")
-            services("docker:dind")
-            beforeScript("docker login -u \$CI_REGISTRY_USER -p \$CI_REGISTRY_PASSWORD \$CI_REGISTRY")
-        }
-
         val dockerBuildJob = dockerBuildJob(
             "docker-build",
-            DockerTarget("\$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA", gitlabDockerCredentials),
+            DockerTarget(gitlabCiImage, gitlabDockerCredentials),
             "./app"
         ) {
             needs(buildJob)
             stage = Stages.Build
         }
 
-        job("docker-publish-dev") {
+        dockerMoveJob(
+            "docker-publish-dev",
+            gitlabCiSource,
+            Targets.DockerHubDev
+        ) {
             needs(dockerBuildJob)
             stage = Stages.Publish
-            extends(dockerBaseJob)
-            script(
-                "docker pull \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA",
-                "docker tag \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA rbbl/genre-police:dev",
-                "docker login -u \$DOCKERHUB_USER -p \$DOCKERHUB_ACCESS_TOKEN",
-                "docker push rbbl/genre-police:dev"
-            )
             rules = Rules.dev
         }
 
-        job("docker-publish-master") {
+        dockerMoveJob(
+            "docker-publish-master",
+            gitlabCiSource,
+            Targets.DockerHubLatest
+        ) {
             needs(dockerBuildJob)
             stage = Stages.Publish
-            extends(dockerBaseJob)
-            script(
-                "docker pull \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA",
-                "docker tag \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA rbbl/genre-police:latest",
-                "docker login -u \$DOCKERHUB_USER -p \$DOCKERHUB_ACCESS_TOKEN",
-                "docker push rbbl/genre-police:latest"
-            )
             rules = Rules.master
         }
 
-        job("docker-publish-release-candidate") {
+        dockerMoveJob(
+            "docker-publish-release-candidate",
+            gitlabCiSource,
+            listOf(Targets.DockerHubTagged, Targets.JfrogTagged)
+        ) {
             needs(dockerBuildJob)
             stage = Stages.Publish
-            extends(dockerBaseJob)
-            script(
-                "docker pull \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA",
-                "docker tag \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA rbbl/genre-police:\$CI_COMMIT_TAG",
-                "docker tag \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA \$JFROG_URL/genre-police-docker-local/genre-police:\$CI_COMMIT_TAG",
-                "docker login -u \$DOCKERHUB_USER -p \$DOCKERHUB_ACCESS_TOKEN",
-                "docker login -u \$JFROG_USERNAME -p \$JFROG_API_KEY \$JFROG_URL",
-                "docker push rbbl/genre-police:\$CI_COMMIT_TAG",
-                "docker push \$JFROG_URL/genre-police-docker-local/genre-police:\$CI_COMMIT_TAG"
-            )
             rules = Rules.releaseCandidate
         }
 
-        job("docker-publish-release") {
+        dockerMoveJob("docker-publish-release", gitlabCiSource, Targets.DockerHubTagged) {
             needs(dockerBuildJob)
             stage = Stages.Publish
-            extends(dockerBaseJob)
-            script(
-                "docker pull \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA",
-                "docker tag \$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA rbbl/genre-police:\$CI_COMMIT_TAG",
-                "docker login -u \$DOCKERHUB_USER -p \$DOCKERHUB_ACCESS_TOKEN",
-                "docker push rbbl/genre-police:\$CI_COMMIT_TAG"
-            )
             rules = Rules.release
         }
 

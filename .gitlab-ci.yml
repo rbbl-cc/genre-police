@@ -11,13 +11,6 @@
     - "app/build/libs/genre-police.jar"
   script:
   - "gradle build"
-".docker":
-  image:
-    name: "docker"
-  services:
-  - name: "docker:dind"
-  before_script:
-  - "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
 "docker-build":
   image:
     name: "docker"
@@ -31,59 +24,71 @@
   - "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
   - "docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
 "docker-publish-dev":
-  extends:
-  - ".docker"
+  image:
+    name: "docker"
   stage: "publish"
+  services:
+  - name: "docker:dind"
   needs:
   - job: "docker-build"
   rules:
   - if: "$CI_COMMIT_BRANCH =~ /^dev$/"
   script:
+  - "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
   - "docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
   - "docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA rbbl/genre-police:dev"
-  - "docker login -u $DOCKERHUB_USER -p $DOCKERHUB_ACCESS_TOKEN"
+  - "docker login -u $DOCKERHUB_USER -p $DOCKERHUB_ACCESS_TOKEN docker.io"
   - "docker push rbbl/genre-police:dev"
 "docker-publish-master":
-  extends:
-  - ".docker"
+  image:
+    name: "docker"
   stage: "publish"
+  services:
+  - name: "docker:dind"
   needs:
   - job: "docker-build"
   rules:
   - if: "$CI_COMMIT_BRANCH =~ /^master$/"
   script:
+  - "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
   - "docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
   - "docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA rbbl/genre-police:latest"
-  - "docker login -u $DOCKERHUB_USER -p $DOCKERHUB_ACCESS_TOKEN"
+  - "docker login -u $DOCKERHUB_USER -p $DOCKERHUB_ACCESS_TOKEN docker.io"
   - "docker push rbbl/genre-police:latest"
 "docker-publish-release-candidate":
-  extends:
-  - ".docker"
+  image:
+    name: "docker"
   stage: "publish"
+  services:
+  - name: "docker:dind"
   needs:
   - job: "docker-build"
   rules:
   - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/"
   script:
+  - "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
   - "docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
   - "docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA rbbl/genre-police:$CI_COMMIT_TAG"
-  - "docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA $JFROG_URL/genre-police-docker-local/genre-police:$CI_COMMIT_TAG"
-  - "docker login -u $DOCKERHUB_USER -p $DOCKERHUB_ACCESS_TOKEN"
-  - "docker login -u $JFROG_USERNAME -p $JFROG_API_KEY $JFROG_URL"
+  - "docker login -u $DOCKERHUB_USER -p $DOCKERHUB_ACCESS_TOKEN docker.io"
   - "docker push rbbl/genre-police:$CI_COMMIT_TAG"
+  - "docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA $JFROG_URL/genre-police-docker-local/genre-police:$CI_COMMIT_TAG"
+  - "docker login -u $JFROG_USERNAME -p $JFROG_API_KEY $JFROG_URL"
   - "docker push $JFROG_URL/genre-police-docker-local/genre-police:$CI_COMMIT_TAG"
 "docker-publish-release":
-  extends:
-  - ".docker"
+  image:
+    name: "docker"
   stage: "publish"
+  services:
+  - name: "docker:dind"
   needs:
   - job: "docker-build"
   rules:
   - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/"
   script:
+  - "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
   - "docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
   - "docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA rbbl/genre-police:$CI_COMMIT_TAG"
-  - "docker login -u $DOCKERHUB_USER -p $DOCKERHUB_ACCESS_TOKEN"
+  - "docker login -u $DOCKERHUB_USER -p $DOCKERHUB_ACCESS_TOKEN docker.io"
   - "docker push rbbl/genre-police:$CI_COMMIT_TAG"
 ".helm":
   image:

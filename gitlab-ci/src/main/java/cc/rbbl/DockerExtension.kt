@@ -18,8 +18,8 @@ abstract class DockerSourceTarget(val imageTag: String, val dockerCredentials: D
     fun toShellCommand(): String = "docker ${direction.instruction} $imageTag"
 }
 
-class DockerSource(source: String, dockerCredentials: DockerCredentials) :
-    DockerSourceTarget(source, dockerCredentials) {
+class DockerSource(sourceImage: String, dockerCredentials: DockerCredentials) :
+    DockerSourceTarget(sourceImage, dockerCredentials) {
     override val direction: DockerDirection
         get() = DockerDirection.PULL
 }
@@ -30,14 +30,8 @@ class DockerTarget(targetImage: String, dockerCredentials: DockerCredentials) :
         get() = DockerDirection.PUSH
 }
 
-fun createDockerBuildJob(
-    name: String,
-    targets: List<DockerTarget>,
-    context: String = ".",
-    dockerVersion: String? = null,
-    block: JobDsl.() -> Unit = {}
-): JobDsl {
-    return createJob(name) {
+fun createDockerBaseJob(name: String, dockerVersion: String? = null, block: JobDsl.() -> Unit = {}): JobDsl =
+    createJob(name) {
         image(
             if (dockerVersion == null) {
                 "docker"
@@ -52,6 +46,16 @@ fun createDockerBuildJob(
                 "docker:$dockerVersion-dind"
             }
         )
+    }.apply(block)
+
+fun createDockerBuildJob(
+    name: String,
+    targets: List<DockerTarget>,
+    context: String = ".",
+    dockerVersion: String? = null,
+    block: JobDsl.() -> Unit = {}
+): JobDsl {
+    return createDockerBaseJob(name, dockerVersion) {
         val scripts = ArrayList<String>()
         scripts.add(targets.fold("docker build") { buildCommand: String, dockerTarget: DockerTarget -> buildCommand + " -t ${dockerTarget.imageTag}" } + " $context")
         targets.forEach {
@@ -93,5 +97,58 @@ fun GitlabCiDsl.dockerBuildJob(
     +job
     return job
 }
+
+fun createDockerMoveJob(
+    name: String,
+    source: DockerSource,
+    targets: List<DockerTarget>,
+    dockerVersion: String? = null,
+    block: JobDsl.() -> Unit = {}
+): JobDsl {
+    return createDockerBaseJob(name, dockerVersion) {
+        val scripts = ArrayList<String>()
+        scripts.add(source.dockerCredentials.toLoginCommand())
+        scripts.add(source.toShellCommand())
+        targets.forEach {
+            scripts.add("docker tag ${source.imageTag} ${it.imageTag}")
+            scripts.add(it.dockerCredentials.toLoginCommand())
+            scripts.add(it.toShellCommand())
+        }
+        script(scripts)
+    }.apply(block)
+}
+
+fun createDockerMoveJob(
+    name: String,
+    source: DockerSource,
+    target: DockerTarget,
+    dockerVersion: String? = null,
+    block: JobDsl.() -> Unit = {}
+): JobDsl = createDockerMoveJob(name, source, listOf(target), dockerVersion, block)
+
+fun GitlabCiDsl.dockerMoveJob(
+    name: String,
+    source: DockerSource,
+    targets: List<DockerTarget>,
+    dockerVersion: String? = null,
+    block: JobDsl.() -> Unit = {}
+): JobDsl {
+    val job = createDockerMoveJob(name, source, targets, dockerVersion, block)
+    +job
+    return job
+}
+
+fun GitlabCiDsl.dockerMoveJob(
+    name: String,
+    source: DockerSource,
+    target: DockerTarget,
+    dockerVersion: String? = null,
+    block: JobDsl.() -> Unit = {}
+): JobDsl {
+    val job = createDockerMoveJob(name, source, target, dockerVersion, block)
+    +job
+    return job
+}
+
 
 val gitlabDockerCredentials = DockerCredentials("\$CI_REGISTRY_USER", "\$CI_REGISTRY_PASSWORD", "\$CI_REGISTRY")
