@@ -41,15 +41,12 @@ val gitlabCiSource = DockerSource("\$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA", g
 
 object Credentials {
     val DockerHub = DockerCredentials("\$DOCKERHUB_USER", "\$DOCKERHUB_ACCESS_TOKEN")
-    val Jfrog = DockerCredentials("\$JFROG_USERNAME", "\$JFROG_API_KEY", "\$JFROG_URL")
 }
 
 object Targets {
     val DockerHubDev = DockerTarget("rbbl/genre-police:dev", Credentials.DockerHub)
     val DockerHubLatest = DockerTarget("rbbl/genre-police:latest", Credentials.DockerHub)
     val DockerHubTagged = DockerTarget("rbbl/genre-police:\$CI_COMMIT_TAG", Credentials.DockerHub)
-    val JfrogTagged =
-        DockerTarget("\$JFROG_URL/genre-police-docker-local/genre-police:\$CI_COMMIT_TAG", Credentials.Jfrog)
 }
 
 fun main() {
@@ -104,7 +101,7 @@ fun main() {
         dockerMoveJob(
             "docker-publish-release-candidate",
             gitlabCiSource,
-            listOf(Targets.DockerHubTagged, Targets.JfrogTagged)
+            Targets.DockerHubTagged
         ) {
             needs(dockerBuildJob)
             stage = Stages.Publish

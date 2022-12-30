@@ -86,9 +86,6 @@
   - "docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA rbbl/genre-police:$CI_COMMIT_TAG"
   - "docker login -u $DOCKERHUB_USER -p $DOCKERHUB_ACCESS_TOKEN docker.io"
   - "docker push rbbl/genre-police:$CI_COMMIT_TAG"
-  - "docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA $JFROG_URL/genre-police-docker-local/genre-police:$CI_COMMIT_TAG"
-  - "docker login -u $JFROG_USERNAME -p $JFROG_API_KEY $JFROG_URL"
-  - "docker push $JFROG_URL/genre-police-docker-local/genre-police:$CI_COMMIT_TAG"
 "docker-publish-release":
   image:
     name: "docker"
