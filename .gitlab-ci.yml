@@ -1,7 +1,22 @@
 "stages":
+- "test"
 - "build"
 - "publish"
 - "release"
+"checkCiRender":
+  image:
+    name: "gradle:latest"
+  script:
+  - "export OLD=$(cat ./.gitlab-ci.yml)"
+  - "gradle renderCi"
+  - "export NEW=$(cat ./.gitlab-ci.yml)"
+  - "echo '#!/bin/sh' > compare_script.sh"
+  - "echo 'if [ \"$OLD\" != \"$NEW\" ]; then' >> compare_script.sh"
+  - "echo ' echo Please render your Gitlab Ci Changes' >> compare_script.sh"
+  - "echo ' exit 1' >> compare_script.sh"
+  - "echo 'fi' >> compare_script.sh"
+  - "chmod +x ./compare_script.sh"
+  - "./compare_script.sh"
 "build":
   image:
     name: "gradle:7.2.0-jdk11"

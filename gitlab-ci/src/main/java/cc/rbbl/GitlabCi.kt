@@ -1,10 +1,12 @@
 package cc.rbbl
 
+import cc.rbbl.gitlab_ci_kotlin_dsl_extensions.common_jobs.ciRenderCheckJob
 import cc.rbbl.gitlab_ci_kotlin_dsl_extensions.docker.*
 import pcimcioch.gitlabci.dsl.gitlabCi
 import pcimcioch.gitlabci.dsl.job.createRules
 
 object Stages {
+    const val Test = "test"
     const val Build = "build"
     const val Publish = "publish"
     const val Release = "release"
@@ -33,6 +35,8 @@ object Rules {
     }
 }
 
+const val gradleImage = "gradle:7.2.0-jdk11"
+
 const val gitlabCiImage = "\$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA"
 
 val gitlabCiSource = DockerSource(gitlabCiImage, gitlabDockerCredentials)
@@ -53,14 +57,17 @@ object Targets {
 fun main() {
     gitlabCi(validate = true, "../.gitlab-ci.yml") {
         stages {
+            +Stages.Test
             +Stages.Build
             +Stages.Publish
             +Stages.Release
         }
 
+        ciRenderCheckJob("checkCiRender")
+
         val buildJob = job("build") {
             stage = Stages.Build
-            image("gradle:7.2.0-jdk11")
+            image(gradleImage)
             script("gradle build")
             artifacts {
                 paths("app/build/libs/genre-police.jar")

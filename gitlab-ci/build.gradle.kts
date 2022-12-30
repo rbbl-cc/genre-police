@@ -8,7 +8,6 @@ version = "unspecified"
 
 repositories {
     mavenCentral()
-    mavenLocal()
     maven {
         name = "Snapshot"
         url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots")
@@ -17,7 +16,8 @@ repositories {
 
 dependencies {
     implementation("com.github.pcimcioch:gitlab-ci-kotlin-dsl:1.3.2")
-    implementation("cc.rbbl.gitlab-ci-kotlin-dsl-extensions:docker:0.1.11-SNAPSHOT")
+    implementation("cc.rbbl.gitlab-ci-kotlin-dsl-extensions:common-jobs:0.1.0-SNAPSHOT")
+    implementation("cc.rbbl.gitlab-ci-kotlin-dsl-extensions:docker:0.2.0-SNAPSHOT")
 }
 
 
