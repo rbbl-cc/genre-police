@@ -1,6 +1,6 @@
 package cc.rbbl
 
-import cc.rbbl.gitlab_ci_kotlin_dsl_docker_extension.*
+import cc.rbbl.gitlab_ci_kotlin_dsl_extensions.docker.*
 import pcimcioch.gitlabci.dsl.gitlabCi
 import pcimcioch.gitlabci.dsl.job.createRules
 
