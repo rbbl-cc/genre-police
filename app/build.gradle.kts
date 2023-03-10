@@ -40,7 +40,7 @@ val ktorVersion = "1.6.8"
 dependencies {
     implementation("cc.rbbl:program-parameters-jvm:1.0.3")
     implementation("net.dv8tion:JDA:4.4.0_350")
-    implementation("com.adamratzman:spotify-api-kotlin-core:3.8.6")
+    implementation("com.adamratzman:spotify-api-kotlin-core:4.0.0")
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
     implementation("io.ktor:ktor-serialization:$ktorVersion")

@@ -37,16 +37,15 @@ object Rules {
 
 const val gradleImage = "gradle:7.2.0-jdk11"
 
-val gitlabCiSource = DockerSource("\$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA", gitlabDockerCredentials)
+val gitlabCiSource = DockerImage("\$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA", gitlabDockerCredentials)
 
-object Credentials {
-    val DockerHub = DockerCredentials("\$DOCKERHUB_USER", "\$DOCKERHUB_ACCESS_TOKEN")
-}
+val dockerHubCredentials = DockerCredentials("\$DOCKERHUB_USER", "\$DOCKERHUB_ACCESS_TOKEN")
+
 
 object Targets {
-    val DockerHubDev = DockerTarget("rbbl/genre-police:dev", Credentials.DockerHub)
-    val DockerHubLatest = DockerTarget("rbbl/genre-police:latest", Credentials.DockerHub)
-    val DockerHubTagged = DockerTarget("rbbl/genre-police:\$CI_COMMIT_TAG", Credentials.DockerHub)
+    val DockerHubDev = DockerImage("rbbl/genre-police:dev", dockerHubCredentials)
+    val DockerHubLatest = DockerImage("rbbl/genre-police:latest", dockerHubCredentials)
+    val DockerHubTagged = DockerImage("rbbl/genre-police:\$CI_COMMIT_TAG", dockerHubCredentials)
 }
 
 fun main() {
@@ -71,7 +70,7 @@ fun main() {
 
         val dockerBuildJob = dockerBuildJob(
             "docker-build",
-            gitlabCiSource.toTarget(),
+            gitlabCiSource,
             "./app"
         ) {
             needs(buildJob)
