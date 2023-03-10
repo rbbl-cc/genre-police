@@ -16,7 +16,7 @@ repositories {
 
 dependencies {
     implementation("com.github.pcimcioch:gitlab-ci-kotlin-dsl:1.4.0")
-    implementation("cc.rbbl.gitlab-ci-kotlin-dsl-extensions:common-jobs:0.1.0-SNAPSHOT")
+    implementation("cc.rbbl.gitlab-ci-kotlin-dsl-extensions:common-jobs:1.0.0")
     implementation("cc.rbbl.gitlab-ci-kotlin-dsl-extensions:docker:0.3.0-SNAPSHOT")
 }
 
