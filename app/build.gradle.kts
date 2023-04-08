@@ -35,7 +35,7 @@ tasks.withType<JavaCompile> {
 }
 
 val exposedVersion = "0.36.1"
-val ktorVersion = "1.6.8"
+val ktorVersion = "2.2.4"
 
 dependencies {
     implementation("cc.rbbl:program-parameters-jvm:1.0.3")
@@ -43,8 +43,10 @@ dependencies {
     implementation("com.adamratzman:spotify-api-kotlin-core:4.0.0")
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
-    implementation("io.ktor:ktor-serialization:$ktorVersion")
-    implementation("com.github.zensum:ktor-health-check:011a5a8")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+    implementation("io.ktor:ktor-server-cors:$ktorVersion")
+    implementation("cc.rbbl:ktor-health-check:2.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
     //Persistence

@@ -1,16 +1,18 @@
 package cc.rbbl
 
-import io.ktor.application.*
-import io.ktor.features.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import cc.rbbl.ktor_health_check.Health
 import io.ktor.serialization.*
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import ktor_health_check.Health
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.requests.GatewayIntent
@@ -52,33 +54,7 @@ fun main(args: Array<String>) {
                 delay(10000) //10 seconds
             }
             launch {
-                embeddedServer(Netty, port = config.port) {
-                    install(ContentNegotiation) {
-                        json()
-                    }
-                    install(CORS){
-                        anyHost()
-                    }
-                    install(Health) {
-                        readyCheck("database") {
-                            HealthAttributes.database
-                        }
-                        healthCheck("database") {
-                            HealthAttributes.database
-                        }
-                        readyCheck("discord") {
-                            HealthAttributes.discord
-                        }
-                        healthCheck("discord") {
-                            HealthAttributes.discord
-                        }
-                    }
-                    routing {
-                        get("/stats") {
-                            call.respond(StatsRepository.getStats())
-                        }
-                    }
-                }.start(wait = true)
+                embeddedServer(Netty, port = config.port, module = Application::myApplicationModule).start(wait = true)
             }
         }
     }
@@ -91,4 +67,32 @@ private fun handleDbMigration(config: ProgramConfig) {
         config.dbPassword
     ).load()
     flyway.migrate()
+}
+
+fun Application.myApplicationModule() {
+    install(ContentNegotiation) {
+        json()
+    }
+    install(CORS) {
+        anyHost()
+    }
+    install(Health) {
+        readyCheck("database") {
+            HealthAttributes.database
+        }
+        healthCheck("database") {
+            HealthAttributes.database
+        }
+        readyCheck("discord") {
+            HealthAttributes.discord
+        }
+        healthCheck("discord") {
+            HealthAttributes.discord
+        }
+    }
+    routing {
+        get("/stats") {
+            call.respond(StatsRepository.getStats())
+        }
+    }
 }
