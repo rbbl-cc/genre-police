@@ -39,7 +39,7 @@ val ktorVersion = "2.2.4"
 
 dependencies {
     implementation("cc.rbbl:program-parameters-jvm:1.0.3")
-    implementation("net.dv8tion:JDA:4.4.0_350")
+    implementation("net.dv8tion:JDA:4.4.1_353")
     implementation("com.adamratzman:spotify-api-kotlin-core:4.0.0")
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
@@ -50,7 +50,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
     //Persistence
-    implementation("org.postgresql:postgresql:42.3.6")
+    implementation("org.postgresql:postgresql:42.3.8")
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
