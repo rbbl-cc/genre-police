@@ -149,10 +149,13 @@ fun main() {
 
         job("helm-publish-release") {
             extends(helmBaseJob)
-            script("curl -fs --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form \"chart=@genre-police-\$CHART_VERSION.tgz\" \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/stable/charts")
+            script(
+                "curl -fs --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form \"chart=@genre-police-\$CHART_VERSION.tgz\" \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/stable/charts",
+                "curl -fs --request POST --user \$JFROG_USERNAME:\$JFROG_API_KEY --form \"chart=@genre-police-\$CHART_VERSION.tgz\" https://rbbl.jfrog.io/artifactory/gp-helm/"
+            )
             rules {
                 rule {
-                    ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^web$/"
+                    ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^web$/"
                 }
             }
         }
@@ -160,11 +163,12 @@ fun main() {
         job("helm-publish-release-candidate") {
             extends(helmBaseJob)
             script(
-                "curl -fs --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form \"chart=@genre-police-\$CHART_VERSION.tgz\" \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/dev/charts"
+                "curl -fs --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form \"chart=@genre-police-\$CHART_VERSION.tgz\" \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/dev/charts",
+                "curl -fsv --request POST --user \$JFROG_USERNAME:\$JFROG_API_KEY -T genre-police-\$CHART_VERSION.tgz \"https://rbbl.jfrog.io/artifactory/gp-helm/\$CHART_VERSION.tgz\""
             )
             rules {
                 rule {
-                    ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^web$/"
+                    ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^web$/"
                 }
             }
         }
