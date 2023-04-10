@@ -3,20 +3,10 @@
 - "build"
 - "publish"
 - "release"
-"checkCiRender":
-  image:
-    name: "gradle:latest"
-  script:
-  - "export OLD=$(cat ./.gitlab-ci.yml)"
-  - "gradle renderCi"
-  - "export NEW=$(cat ./.gitlab-ci.yml)"
-  - "echo '#!/bin/sh' > compare_script.sh"
-  - "echo 'if [ \"$OLD\" != \"$NEW\" ]; then' >> compare_script.sh"
-  - "echo ' echo Please render your Gitlab Ci Changes' >> compare_script.sh"
-  - "echo ' exit 1' >> compare_script.sh"
-  - "echo 'fi' >> compare_script.sh"
-  - "chmod +x ./compare_script.sh"
-  - "./compare_script.sh"
+variables:
+  APP_VERSION:
+    value: "1.7.4"
+    description: "The deployment target. Set to 'staging' by default."
 "build":
   image:
     name: "gradle:7.2.0-jdk11"
@@ -24,6 +14,11 @@
   artifacts:
     paths:
     - "app/build/libs/genre-police.jar"
+  rules:
+  - if: "$CI_COMMIT_BRANCH =~ /^dev$/"
+  - if: "$CI_COMMIT_BRANCH =~ /^master$/"
+  - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/"
+  - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/"
   script:
   - "gradle build"
 "docker-build":
@@ -34,6 +29,11 @@
   - name: "docker:dind"
   needs:
   - job: "build"
+  rules:
+  - if: "$CI_COMMIT_BRANCH =~ /^dev$/"
+  - if: "$CI_COMMIT_BRANCH =~ /^master$/"
+  - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/"
+  - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/"
   script:
   - "docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA ./app"
   - "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
@@ -107,10 +107,16 @@
     name: "fedora"
   stage: "publish"
   before_script:
-  - "dnf in -y openssl"
+  - "export HELM_VERSION=$(echo $CI_COMMIT_TAG | grep -o -P '\\d+\\.\\d+\\.\\d+(-RC\\\
+    d+)?')"
+  - "dnf in -y openssl perl"
   - "curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3"
   - "chmod 700 get_helm.sh"
   - "./get_helm.sh"
+  - "echo $CI_PIPELINE_SOURCE"
+  - "perl -pi -e \"s/(?<=appVersion: \\\")[^\\\"]*/$APP_VERSION/g\" helm/genre-police/Chart.yaml"
+  - "perl -pi -e \"s/(?<=version: \\\")[^\\\"]*/$HELM_VERSION/g\" helm/genre-police/Chart.yaml"
+  - "cat helm/genre-police/Chart.yaml"
   - "helm repo add bitnami https://charts.bitnami.com/bitnami"
   - "helm dependency build helm/genre-police"
   - "helm package helm/genre-police"
@@ -119,7 +125,8 @@
   extends:
   - ".helm"
   rules:
-  - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/"
+  - if: "$CI_COMMIT_TAG =~ /^chart\\/\\d+\\.\\d+\\.\\d+$/"
+    when: "manual"
   script:
   - "curl --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form 'chart=@genre-police.tgz'\
     \ ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/stable/charts"
@@ -127,7 +134,8 @@
   extends:
   - ".helm"
   rules:
-  - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/"
+  - if: "$CI_COMMIT_TAG =~ /^chart\\/\\d+\\.\\d+\\.\\d+-RC\\d+$/"
+    when: "manual"
   script:
   - "curl --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form 'chart=@genre-police.tgz'\
     \ ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/dev/charts"
