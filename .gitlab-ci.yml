@@ -110,17 +110,21 @@ variables:
     name: "fedora"
   stage: "publish"
   before_script:
-  - "dnf in -y openssl perl"
+  - "dnf in -y openssl"
+  - "curl -fsLO https://github.com/mikefarah/yq/releases/download/${VERSION}/${BINARY}\
+    \ && mv ${BINARY} /usr/bin/yq && chmod +x /usr/bin/yq"
   - "curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3"
   - "chmod 700 get_helm.sh"
   - "./get_helm.sh"
-  - "echo $CI_PIPELINE_SOURCE"
-  - "perl -pi -e \"s/(?<=appVersion: \\\")[^\\\"]*/$CI_COMMIT_TAG/\" helm/genre-police/Chart.yaml"
-  - "perl -pi -e \"s/(?<=version: \\\"?)0.0.0-placeholder/$CHART_VERSION/\" helm/genre-police/Chart.yaml"
+  - "yq -i \".appVersion = \\\"$CI_COMMIT_TAG\\\"\" helm/genre-police/Chart.yaml"
+  - "yq -i \".version = \\\"$CHART_VERSION\\\"\" helm/genre-police/Chart.yaml"
   - "cat helm/genre-police/Chart.yaml"
   - "helm repo add bitnami https://charts.bitnami.com/bitnami"
   - "helm dependency build helm/genre-police"
   - "helm package helm/genre-police"
+  variables:
+    "VERSION": "v4.33.2"
+    "BINARY": "yq_linux_amd64"
 "helm-publish-release":
   extends:
   - ".helm"
@@ -128,7 +132,7 @@ variables:
   - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && $CI_PIPELINE_SOURCE =~\
       \ /^web$/"
   script:
-  - "curl --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form \"chart=@genre-police-$CHART_VERSION.tgz\"\
+  - "curl -fs --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form \"chart=@genre-police-$CHART_VERSION.tgz\"\
     \ ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/stable/charts"
 "helm-publish-release-candidate":
   extends:
@@ -136,7 +140,7 @@ variables:
   rules:
   - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && $CI_PIPELINE_SOURCE =~ /^web$/"
   script:
-  - "curl --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form \"chart=@genre-police-$CHART_VERSION.tgz\"\
+  - "curl -fs --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form \"chart=@genre-police-$CHART_VERSION.tgz\"\
     \ ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/dev/charts"
 "create-release":
   image:

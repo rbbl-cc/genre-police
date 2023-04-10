@@ -128,14 +128,18 @@ fun main() {
         val helmBaseJob = job(".helm") {
             stage = Stages.Publish
             image("fedora")
+            variables {
+                add("VERSION", "v4.33.2")
+                add("BINARY", "yq_linux_amd64")
+            }
             beforeScript(
-                "dnf in -y openssl perl",
+                "dnf in -y openssl",
+                "curl -fsLO https://github.com/mikefarah/yq/releases/download/\${VERSION}/\${BINARY} && mv \${BINARY} /usr/bin/yq && chmod +x /usr/bin/yq",
                 "curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3",
                 "chmod 700 get_helm.sh",
                 "./get_helm.sh",
-                "echo \$CI_PIPELINE_SOURCE",
-                "perl -pi -e \"s/(?<=appVersion: \\\")[^\\\"]*/\$CI_COMMIT_TAG/\" helm/genre-police/Chart.yaml",
-                "perl -pi -e \"s/(?<=version: \\\"?)0.0.0-placeholder/\$CHART_VERSION/\" helm/genre-police/Chart.yaml",
+                "yq -i \".appVersion = \\\"\$CI_COMMIT_TAG\\\"\" helm/genre-police/Chart.yaml",
+                "yq -i \".version = \\\"\$CHART_VERSION\\\"\" helm/genre-police/Chart.yaml",
                 "cat helm/genre-police/Chart.yaml",
                 "helm repo add bitnami https://charts.bitnami.com/bitnami",
                 "helm dependency build helm/genre-police",
@@ -145,7 +149,7 @@ fun main() {
 
         job("helm-publish-release") {
             extends(helmBaseJob)
-            script("curl --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form \"chart=@genre-police-\$CHART_VERSION.tgz\" \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/stable/charts")
+            script("curl -fs --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form \"chart=@genre-police-\$CHART_VERSION.tgz\" \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/stable/charts")
             rules {
                 rule {
                     ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^web$/"
@@ -156,7 +160,7 @@ fun main() {
         job("helm-publish-release-candidate") {
             extends(helmBaseJob)
             script(
-                "curl --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form \"chart=@genre-police-\$CHART_VERSION.tgz\" \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/dev/charts"
+                "curl -fs --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form \"chart=@genre-police-\$CHART_VERSION.tgz\" \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/dev/charts"
             )
             rules {
                 rule {
