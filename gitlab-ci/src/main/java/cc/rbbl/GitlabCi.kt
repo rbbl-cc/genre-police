@@ -3,7 +3,7 @@ package cc.rbbl
 import cc.rbbl.gitlab_ci_kotlin_dsl_extensions.common_jobs.ciRenderCheckJob
 import cc.rbbl.gitlab_ci_kotlin_dsl_extensions.docker.*
 import pcimcioch.gitlabci.dsl.gitlabCi
-import pcimcioch.gitlabci.dsl.job.createRules
+import pcimcioch.gitlabci.dsl.job.createRule
 
 object Stages {
     const val Test = "test"
@@ -13,25 +13,17 @@ object Stages {
 }
 
 object Rules {
-    val dev = createRules {
-        rule {
-            ifCondition = "\$CI_COMMIT_BRANCH =~ /^dev$/"
-        }
+    val dev = createRule {
+        ifCondition = "\$CI_COMMIT_BRANCH =~ /^dev$/"
     }
-    val master = createRules {
-        rule {
-            ifCondition = "\$CI_COMMIT_BRANCH =~ /^master$/"
-        }
+    val master = createRule {
+        ifCondition = "\$CI_COMMIT_BRANCH =~ /^master$/"
     }
-    val releaseCandidate = createRules {
-        rule {
-            ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/"
-        }
+    val releaseCandidate = createRule {
+        ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^push$/"
     }
-    val release = createRules {
-        rule {
-            ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/"
-        }
+    val release = createRule {
+        ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^push$/"
     }
 }
 
@@ -66,6 +58,12 @@ fun main() {
             artifacts {
                 paths("app/build/libs/genre-police.jar")
             }
+            rules {
+                +Rules.dev
+                +Rules.master
+                +Rules.releaseCandidate
+                +Rules.release
+            }
         }
 
         val dockerBuildJob = dockerBuildJob(
@@ -75,6 +73,12 @@ fun main() {
         ) {
             needs(buildJob)
             stage = Stages.Build
+            rules {
+                +Rules.dev
+                +Rules.master
+                +Rules.releaseCandidate
+                +Rules.release
+            }
         }
 
         dockerMoveJob(
@@ -84,7 +88,9 @@ fun main() {
         ) {
             needs(dockerBuildJob)
             stage = Stages.Publish
-            rules = Rules.dev
+            rules {
+                +Rules.dev
+            }
         }
 
         dockerMoveJob(
@@ -94,7 +100,9 @@ fun main() {
         ) {
             needs(dockerBuildJob)
             stage = Stages.Publish
-            rules = Rules.master
+            rules {
+                +Rules.master
+            }
         }
 
         dockerMoveJob(
@@ -104,47 +112,66 @@ fun main() {
         ) {
             needs(dockerBuildJob)
             stage = Stages.Publish
-            rules = Rules.releaseCandidate
+            rules {
+                +Rules.releaseCandidate
+            }
         }
 
         dockerMoveJob("docker-publish-release", gitlabCiSource, Targets.DockerHubTagged) {
             needs(dockerBuildJob)
             stage = Stages.Publish
-            rules = Rules.release
+            rules {
+                +Rules.release
+            }
         }
 
         val helmBaseJob = job(".helm") {
             stage = Stages.Publish
             image("fedora")
             beforeScript(
-                "dnf in -y openssl",
+                "dnf in -y openssl perl",
                 "curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3",
                 "chmod 700 get_helm.sh",
                 "./get_helm.sh",
+                "echo \$CI_PIPELINE_SOURCE",
+                "perl -pi -e \"s/(?<=appVersion: \\\"?)[^\\\"]*/\$CI_COMMIT_TAG/\" helm/genre-police/Chart.yaml",
+                "perl -pi -e \"s/(?<=version: \\\"?)0.0.0-placeholder/\$CHART_VERSION/\" helm/genre-police/Chart.yaml",
+                "cat helm/genre-police/Chart.yaml",
                 "helm repo add bitnami https://charts.bitnami.com/bitnami",
                 "helm dependency build helm/genre-police",
-                "helm package helm/genre-police",
-                "mv genre-police-*.tgz genre-police.tgz"
+                "helm package helm/genre-police"
             )
         }
 
         job("helm-publish-release") {
             extends(helmBaseJob)
             script("curl --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form 'chart=@genre-police.tgz' \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/stable/charts")
-            rules = Rules.release
+            rules {
+                rule {
+                    ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^web$/"
+                }
+            }
         }
 
         job("helm-publish-release-candidate") {
             extends(helmBaseJob)
-            script("curl --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form 'chart=@genre-police.tgz' \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/dev/charts")
-            rules = Rules.releaseCandidate
+            script(
+                "curl --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form 'chart=@genre-police.tgz' \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/dev/charts"
+            )
+            rules {
+                rule {
+                    ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^web$/"
+                }
+            }
         }
 
         job("create-release") {
             stage = Stages.Release
             image("registry.gitlab.com/gitlab-org/release-cli:latest")
             script("echo 'Running the release job.'")
-            rules = Rules.release
+            rules {
+                +Rules.release
+            }
             release {
                 name = "\$CI_COMMIT_TAG"
                 tagName = "\$CI_COMMIT_TAG"
