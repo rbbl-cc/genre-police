@@ -151,8 +151,9 @@ fun main() {
             extends(helmBaseJob)
             script("curl --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form 'chart=@genre-police.tgz' \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/stable/charts")
             rules {
-                +Rules.release
-                +Rules.manualPipeline
+                rule {
+                    ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^web$/"
+                }
             }
         }
 
@@ -162,8 +163,9 @@ fun main() {
                 "curl --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form 'chart=@genre-police.tgz' \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/dev/charts"
             )
             rules {
-                +Rules.releaseCandidate
-                +Rules.manualPipeline
+                rule {
+                    ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^web$/"
+                }
             }
         }
 
