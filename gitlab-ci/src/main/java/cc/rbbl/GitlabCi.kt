@@ -41,7 +41,7 @@ object Targets {
 }
 
 fun main() {
-    gitlabCi(validate = true, "../.gitlab-ci.yml") {
+    gitlabCi(validate = true, "../.gitlab-ci-generated.yml") {
         stages {
             +Stages.Test
             +Stages.Build
@@ -49,7 +49,7 @@ fun main() {
             +Stages.Release
         }
 
-        ciRenderCheckJob("checkCiRender")
+        ciRenderCheckJob("checkCiRender", path = ".gitlab-ci-generated.yml")
 
         val buildJob = job("build") {
             stage = Stages.Build
