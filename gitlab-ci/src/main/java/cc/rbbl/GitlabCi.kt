@@ -46,7 +46,13 @@ fun main() {
             +Stages.Release
         }
 
-        ciRenderCheckJob("checkCiRender", path = ".gitlab-ci-generated.yml")
+        ciRenderCheckJob("checkCiRender", path = ".gitlab-ci-generated.yml") {
+            rules {
+                rule {
+                    ifCondition = "\$CI_PIPELINE_SOURCE =~ /^push\$/"
+                }
+            }
+        }
 
         val dockerBuildJob = dockerBuildJob(
             "docker-build",

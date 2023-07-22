@@ -6,6 +6,8 @@
 "checkCiRender":
   image:
     name: "gradle:latest"
+  rules:
+  - if: "$CI_PIPELINE_SOURCE =~ /^push$/"
   script:
   - "export OLD=$(cat .gitlab-ci-generated.yml)"
   - "gradle renderCi"
