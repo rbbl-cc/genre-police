@@ -5,8 +5,8 @@
       <env name="SPOTIFY_CLIENT_SECRET" value="secret" />
       <env name="DISCORD_TOKEN" value="token" />
       <env name="JDBC_URL" value="jdbc:postgresql://localhost:5432/genre_police" />
-      <env name="DB_USER" value="user" />
-      <env name="DB_PASSWORD" value="password" />
+      <env name="DB_USER" value="gp" />
+      <env name="DB_PASSWORD" value="gp" />
     </envs>
     <option name="MAIN_CLASS_NAME" value="cc.rbbl.MainKt" />
     <module name="genre-police.app.main" />
@@ -17,6 +17,7 @@
       </pattern>
     </extension>
     <method v="2">
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="docker-compose - db" run_configuration_type="docker-deploy" />
       <option name="Make" enabled="true" />
     </method>
   </configuration>

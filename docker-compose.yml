@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: gp
+      POSTGRES_PASSWORD: gp
+      POSTGRES_DB: genre_police
+    ports:
+      - "5432:5432"
+    volumes:
+      - postrges:/var/lib/postgresql/data
+  app:
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    environment:
+      SPOTIFY_CLIENT_ID: $SPOTIFY_CLIENT_ID
+      SPOTIFY_CLIENT_SECRET: $SPOTIFY_CLIENT_SECRET
+      DISCORD_TOKEN: $DISCORD_TOKEN
+      JDBC_URL: jdbc:postgresql://db:5432/genre_police
+      DB_USER: gp
+      DB_PASSWORD: gp
+volumes:
+  postrges:
