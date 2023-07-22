@@ -1,7 +1,6 @@
 package cc.rbbl
 
 import cc.rbbl.ktor_health_check.Health
-import io.ktor.serialization.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -92,6 +91,9 @@ fun Application.myApplicationModule() {
     }
     routing {
         get("/stats") {
+            call.respond(StatsRepository.getStats())
+        }
+        get("/status") {
             call.respond(StatsRepository.getStats())
         }
     }
