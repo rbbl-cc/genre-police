@@ -27,7 +27,7 @@ object Rules {
     }
 }
 
-const val gradleImage = "gradle:7.2.0-jdk11"
+const val gradleImage = "gradle:8.2.1-jdk17"
 
 val gitlabCiSource = DockerImage("\$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA", gitlabDockerCredentials)
 

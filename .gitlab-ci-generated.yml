@@ -19,7 +19,7 @@
   - "./compare_script.sh"
 "build":
   image:
-    name: "gradle:7.2.0-jdk11"
+    name: "gradle:8.2.1-jdk17"
   stage: "build"
   artifacts:
     paths:

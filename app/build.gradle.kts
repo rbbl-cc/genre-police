@@ -4,7 +4,7 @@ plugins {
     kotlin("jvm")
     kotlin("plugin.serialization") version "1.7.10"
     application
-    id("com.github.johnrengelman.shadow") version "7.0.0"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "cc.rbbl"
@@ -27,11 +27,11 @@ sourceSets.main {
 }
 
 val compileKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
-compileKotlin.kotlinOptions.jvmTarget = "11"
+compileKotlin.kotlinOptions.jvmTarget = "17"
 
 tasks.withType<JavaCompile> {
-    sourceCompatibility = "11"
-    targetCompatibility = "11"
+    sourceCompatibility = "17"
+    targetCompatibility = "17"
 }
 
 val exposedVersion = "0.36.1"
