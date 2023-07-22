@@ -27,12 +27,9 @@ object Rules {
     }
 }
 
-const val gradleImage = "gradle:8.2.1-jdk17"
-
 val gitlabCiSource = DockerImage("\$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA", gitlabDockerCredentials)
 
 val dockerHubCredentials = DockerCredentials("\$DOCKERHUB_USER", "\$DOCKERHUB_ACCESS_TOKEN")
-
 
 object Targets {
     val DockerHubDev = DockerImage("rbbl/genre-police:dev", dockerHubCredentials)
@@ -51,27 +48,11 @@ fun main() {
 
         ciRenderCheckJob("checkCiRender", path = ".gitlab-ci-generated.yml")
 
-        val buildJob = job("build") {
-            stage = Stages.Build
-            image(gradleImage)
-            script("gradle build")
-            artifacts {
-                paths("app/build/libs/genre-police.jar")
-            }
-            rules {
-                +Rules.dev
-                +Rules.master
-                +Rules.releaseCandidate
-                +Rules.release
-            }
-        }
-
         val dockerBuildJob = dockerBuildJob(
             "docker-build",
             gitlabCiSource,
-            "./app"
+            dockerFile = "./app/Dockerfile"
         ) {
-            needs(buildJob)
             stage = Stages.Build
             rules {
                 +Rules.dev

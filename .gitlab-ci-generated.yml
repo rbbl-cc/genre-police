@@ -17,29 +17,12 @@
   - "echo 'fi' >> compare_script.sh"
   - "chmod +x ./compare_script.sh"
   - "./compare_script.sh"
-"build":
-  image:
-    name: "gradle:8.2.1-jdk17"
-  stage: "build"
-  artifacts:
-    paths:
-    - "app/build/libs/genre-police.jar"
-  rules:
-  - if: "$CI_COMMIT_BRANCH =~ /^dev$/"
-  - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
-  - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && $CI_PIPELINE_SOURCE =~\
-      \ /^push$/"
-  - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && $CI_PIPELINE_SOURCE =~ /^push$/"
-  script:
-  - "gradle build"
 "docker-build":
   image:
     name: "docker"
   stage: "build"
   services:
   - name: "docker:dind"
-  needs:
-  - job: "build"
   rules:
   - if: "$CI_COMMIT_BRANCH =~ /^dev$/"
   - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
@@ -47,7 +30,7 @@
       \ /^push$/"
   - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && $CI_PIPELINE_SOURCE =~ /^push$/"
   script:
-  - "docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA ./app"
+  - "docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA -f ./app/Dockerfile ."
   - "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
   - "docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
 "docker-publish-dev":
