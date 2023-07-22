@@ -20,9 +20,9 @@ import org.slf4j.LoggerFactory
 import java.util.stream.Collectors
 import kotlin.system.exitProcess
 
-class GenrePolice(config: ProgramConfig) : ListenerAdapter(),
-    Runnable {
-    private val statsCommand = "stats"
+class GenrePolice(config: ProgramConfig) : ListenerAdapter(), Runnable {
+    private val oldStatusCommand = "stats"
+    private val statusCommand = "status"
     private val okErrorResponses = listOf(ErrorResponse.UNKNOWN_MESSAGE, ErrorResponse.UNKNOWN_CHANNEL)
     private var isConnected = true
     private val log = LoggerFactory.getLogger(GenrePolice::class.java)
@@ -34,7 +34,8 @@ class GenrePolice(config: ProgramConfig) : ListenerAdapter(),
 
     override fun onReady(event: ReadyEvent) {
         super.onReady(event)
-        event.jda.upsertCommand(statsCommand, "Get global Stats of the Genre-Police Bot.").queue()
+        event.jda.deleteCommandById(oldStatusCommand)
+        event.jda.upsertCommand(statusCommand, "Get global Stats of the Genre-Police Bot.").queue()
         HealthAttributes.discord = true
         isConnected = true
     }
@@ -129,7 +130,7 @@ class GenrePolice(config: ProgramConfig) : ListenerAdapter(),
     }
 
     override fun onSlashCommand(event: SlashCommandEvent) {
-        if (event.name == statsCommand) {
+        if (event.name == statusCommand) {
             event.deferReply().queue() // Tell discord we received the command, send a thinking... message to the user
             val result = StatsRepository.getStats()
             event.hook.sendMessage("**Servers**: ${result.serverCount}\n**Messages**: ${result.messageCount}").queue()
