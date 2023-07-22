@@ -17,7 +17,7 @@ object Rules {
         ifCondition = "\$CI_COMMIT_BRANCH =~ /^dev$/"
     }
     val master = createRule {
-        ifCondition = "\$CI_COMMIT_BRANCH =~ /^master$/"
+        ifCondition = "\$CI_COMMIT_BRANCH == \$CI_DEFAULT_BRANCH"
     }
     val releaseCandidate = createRule {
         ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^push$/"
