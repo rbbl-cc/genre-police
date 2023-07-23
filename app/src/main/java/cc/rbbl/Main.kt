@@ -90,9 +90,6 @@ fun Application.myApplicationModule() {
         }
     }
     routing {
-        get("/stats") {
-            call.respond(StatsRepository.getStats())
-        }
         get("/status") {
             call.respond(StatsRepository.getStats())
         }
