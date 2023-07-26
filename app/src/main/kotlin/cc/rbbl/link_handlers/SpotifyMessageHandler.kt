@@ -8,7 +8,6 @@ import cc.rbbl.exceptions.ParsingException
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.spotifyAppApi
 import kotlinx.coroutines.runBlocking
-import java.util.regex.Pattern
 
 class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
     private var spotifyApi: SpotifyAppApi
@@ -21,10 +20,9 @@ class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
 
     override fun getGenreResponses(message: String): Set<GenreResponse> = runBlocking {
         val results = HashSet<GenreResponse>()
-        val matcher = Pattern.compile(SPOTIFY_LINK_PATTERN).matcher(message)
         if (!message.lowercase().contains("genre")) {
-            while (matcher.find()) {
-                val typeSlashId = matcher.group().split("?")[0].replace(spotifyDomain, "")
+            SPOTIFY_LINK_PATTERN.findAll(message).forEach {
+                val typeSlashId = it.value.split("?")[0].replace(SPOTIFY_DOMAIN, "")
                 try {
                     val typeAndId = typeSlashId.split("/").toTypedArray()
                     if (typeAndId.size != 2) {
@@ -39,8 +37,8 @@ class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
                     when (e) {
                         is NoGenreFoundException -> results.add(GenreResponse(e.itemName, listOf(), e))
                         is IllegalArgumentException -> results.add(GenreResponse(typeSlashId, listOf(), e))
-                        is ParsingException -> results.add(GenreResponse(matcher.group(), listOf(), e))
-                        else -> results.add(GenreResponse(matcher.group(), listOf(), e))
+                        is ParsingException -> results.add(GenreResponse(it.value, listOf(), e))
+                        else -> results.add(GenreResponse(it.value, listOf(), e))
                     }
                 }
             }
@@ -88,7 +86,7 @@ class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
     }
 
     companion object {
-        private const val SPOTIFY_LINK_PATTERN = "\\bhttps://open.spotify.com/(?:track|album|artist)[^ \\t\\n\\r]*\\b"
-        private const val spotifyDomain = "https://open.spotify.com/"
+        internal val SPOTIFY_LINK_PATTERN = Regex("\\bhttps://open.spotify.com/(?:track|album|artist)[^ \\t\\n\\r]*\\b")
+        private const val SPOTIFY_DOMAIN = "https://open.spotify.com/"
     }
 }
