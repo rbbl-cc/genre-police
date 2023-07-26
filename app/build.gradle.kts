@@ -60,7 +60,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.2.9")
 
     //Testing
-    testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
+    testImplementation(kotlin("test"))
 }
 
 tasks.getByName<Test>("test") {
