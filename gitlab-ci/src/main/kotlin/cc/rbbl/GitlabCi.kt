@@ -3,6 +3,7 @@ package cc.rbbl
 import cc.rbbl.gitlab_ci_kotlin_dsl_extensions.common_jobs.ciRenderCheckJob
 import cc.rbbl.gitlab_ci_kotlin_dsl_extensions.docker.*
 import pcimcioch.gitlabci.dsl.gitlabCi
+import pcimcioch.gitlabci.dsl.job.ImageDsl
 import pcimcioch.gitlabci.dsl.job.createRule
 
 object Stages {
@@ -37,6 +38,7 @@ object Targets {
     val DockerHubTagged = DockerImage("rbbl/genre-police:\$CI_COMMIT_TAG", dockerHubCredentials)
 }
 
+val gradleImage = "gradle:8.2.1"
 fun main() {
     gitlabCi(validate = true, "../.gitlab-ci-generated.yml") {
         stages {
@@ -46,11 +48,19 @@ fun main() {
             +Stages.Release
         }
 
-        ciRenderCheckJob("checkCiRender", path = ".gitlab-ci-generated.yml") {
+        ciRenderCheckJob("checkCiRender", path = ".gitlab-ci-generated.yml", image = gradleImage) {
             rules {
                 rule {
                     ifCondition = "\$CI_PIPELINE_SOURCE =~ /^push\$/"
                 }
+            }
+        }
+
+        job("test") {
+            stage = Stages.Test
+            image = ImageDsl(gradleImage)
+            script {
+                +"gradle check"
             }
         }
 

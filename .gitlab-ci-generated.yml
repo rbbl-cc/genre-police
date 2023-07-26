@@ -5,7 +5,7 @@
 - "release"
 "checkCiRender":
   image:
-    name: "gradle:latest"
+    name: "gradle:8.2.1"
   rules:
   - if: "$CI_PIPELINE_SOURCE =~ /^push$/"
   script:
@@ -19,6 +19,12 @@
   - "echo 'fi' >> compare_script.sh"
   - "chmod +x ./compare_script.sh"
   - "./compare_script.sh"
+"test":
+  image:
+    name: "gradle:8.2.1"
+  stage: "test"
+  script:
+  - "gradle check"
 "docker-build":
   image:
     name: "docker"
