@@ -2,7 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     kotlin("jvm")
-    kotlin("plugin.serialization") version "1.7.10"
+    kotlin("plugin.serialization") version "1.9.0"
     application
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
@@ -35,7 +35,7 @@ tasks.withType<JavaCompile> {
 }
 
 val exposedVersion = "0.36.1"
-val ktorVersion = "2.2.4"
+val ktorVersion = "2.3.2"
 
 dependencies {
     implementation("cc.rbbl:program-parameters-jvm:1.0.3")
