@@ -23,6 +23,8 @@
   image:
     name: "gradle:8.2.1"
   stage: "test"
+  rules:
+  - if: "$CI_PIPELINE_SOURCE =~ /^push$/"
   script:
   - "gradle check"
 "docker-build":
