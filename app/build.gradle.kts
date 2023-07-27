@@ -36,6 +36,7 @@ tasks.withType<JavaCompile> {
 
 val exposedVersion = "0.36.1"
 val ktorVersion = "2.3.2"
+val coroutinesVersion = "1.7.1"
 
 dependencies {
     implementation("cc.rbbl:program-parameters-jvm:1.0.3")
@@ -47,7 +48,9 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-server-cors:$ktorVersion")
     implementation("cc.rbbl:ktor-health-check:2.0.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-java:$ktorVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
 
     //Persistence
     implementation("org.postgresql:postgresql:42.3.8")
@@ -61,6 +64,7 @@ dependencies {
 
     //Testing
     testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
 }
 
 tasks.getByName<Test>("test") {

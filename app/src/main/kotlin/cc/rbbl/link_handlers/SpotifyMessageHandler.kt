@@ -7,6 +7,9 @@ import cc.rbbl.exceptions.NoGenreFoundException
 import cc.rbbl.exceptions.ParsingException
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.spotifyAppApi
+import io.ktor.client.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import kotlinx.coroutines.runBlocking
 
 class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
@@ -22,15 +25,8 @@ class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
         val results = HashSet<GenreResponse>()
         if (!message.lowercase().contains("genre")) {
             SPOTIFY_LINK_PATTERN.findAll(message).forEach {
-                val typeSlashId = it.value.split("?")[0].replace(SPOTIFY_DOMAIN, "")
+                val typeAndId = extractTypeAndId(it.value)
                 try {
-                    val typeAndId = typeSlashId.split("/").toTypedArray().let {typeAndId ->
-                        if(typeAndId.size == 3) {
-                            typeAndId.slice(1..2).toTypedArray()
-                        }else{
-                            typeAndId
-                        }
-                    }
                     if (typeAndId.size != 2) {
                         throw ParsingException()
                     }
@@ -42,7 +38,14 @@ class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
                 } catch (e: Exception) {
                     when (e) {
                         is NoGenreFoundException -> results.add(GenreResponse(e.itemName, listOf(), e))
-                        is IllegalArgumentException -> results.add(GenreResponse(typeSlashId, listOf(), e))
+                        is IllegalArgumentException -> results.add(
+                            GenreResponse(
+                                "${typeAndId[0]}/${typeAndId[1]}",
+                                listOf(),
+                                e
+                            )
+                        )
+
                         is ParsingException -> results.add(GenreResponse(it.value, listOf(), e))
                         else -> results.add(GenreResponse(it.value, listOf(), e))
                     }
@@ -91,9 +94,34 @@ class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
         }
     }
 
+
     companion object {
-        internal val SPOTIFY_LINK_PATTERN = Regex("\\b(?:https://open\\.spotify\\.com/[-a-zA-Z]*/?(?:track|album|artist)|https://spotify\\.link/)[^ \\t\\n\\r]*\\b")
+        internal val SPOTIFY_LINK_PATTERN =
+            Regex("\\b(?:https://open\\.spotify\\.com/[-a-zA-Z]*/?(?:track|album|artist)|https://spotify\\.link/)[^ \\t\\n\\r]*\\b")
         internal val SPOTIFY_SHORT_LINK_PATTERN = Regex("https://spotify\\.link/[^ \\t\\n\\r]*")
         private const val SPOTIFY_DOMAIN = "https://open.spotify.com/"
+        private val httpClient = HttpClient()
+
+        internal suspend fun extractTypeAndId(url: String?): Array<String> {
+            if (url == null) {
+                return emptyArray()
+            }
+            val longUrl = if (SPOTIFY_SHORT_LINK_PATTERN.matches(url)) {
+                SPOTIFY_LINK_PATTERN.find(httpClient.get(url).call.response.bodyAsText())?.value
+            } else {
+                url
+            }
+            if (longUrl == null) {
+                return emptyArray()
+            }
+            val typeSlashId = longUrl.split("?")[0].replace(SPOTIFY_DOMAIN, "")
+            return typeSlashId.split("/").toTypedArray().let { typeAndId ->
+                if (typeAndId.size == 3) {
+                    typeAndId.slice(1..2).toTypedArray()
+                } else {
+                    typeAndId
+                }
+            }
+        }
     }
 }
