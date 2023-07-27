@@ -134,10 +134,8 @@
   rules:
   - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && $CI_PIPELINE_SOURCE =~ /^web$/"
   script:
-  - "curl -fs --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form \"chart=@genre-police-$CHART_VERSION.tgz\"\
-    \ ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/stable/charts"
-  - "curl -fs --user $JFROG_USERNAME:$JFROG_API_KEY -T genre-police-$CHART_VERSION.tgz\
-    \ https://rbbl.jfrog.io/artifactory/gp-helm/$CHART_VERSION.tgz"
+  - "curl -fs --show-error --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form\
+    \ \"chart=@genre-police-$CHART_VERSION.tgz\" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/stable/charts"
 "helm-publish-release-candidate":
   extends:
   - ".helm"
@@ -145,10 +143,8 @@
   - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && $CI_PIPELINE_SOURCE =~\
       \ /^web$/"
   script:
-  - "curl -fs --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form \"chart=@genre-police-$CHART_VERSION.tgz\"\
-    \ ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/dev/charts"
-  - "curl -fs --user $JFROG_USERNAME:$JFROG_API_KEY -T genre-police-$CHART_VERSION.tgz\
-    \ https://rbbl.jfrog.io/artifactory/gp-helm/$CHART_VERSION.tgz"
+  - "curl -fs --show-error --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form\
+    \ \"chart=@genre-police-$CHART_VERSION.tgz\" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/dev/charts"
 "create-release":
   image:
     name: "registry.gitlab.com/gitlab-org/release-cli:latest"

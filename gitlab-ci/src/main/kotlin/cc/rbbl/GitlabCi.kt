@@ -41,7 +41,7 @@ object Targets {
     val DockerHubTagged = DockerImage("rbbl/genre-police:\$CI_COMMIT_TAG", dockerHubCredentials)
 }
 
-val gradleImage = "gradle:8.2.1"
+const val gradleImage = "gradle:8.2.1"
 fun main() {
     gitlabCi(validate = true, "../.gitlab-ci-generated.yml") {
         stages {
@@ -151,8 +151,7 @@ fun main() {
         job("helm-publish-release") {
             extends(helmBaseJob)
             script(
-                "curl -fs --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form \"chart=@genre-police-\$CHART_VERSION.tgz\" \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/stable/charts",
-                "curl -fs --user \$JFROG_USERNAME:\$JFROG_API_KEY -T genre-police-\$CHART_VERSION.tgz https://rbbl.jfrog.io/artifactory/gp-helm/\$CHART_VERSION.tgz"
+                "curl -fs --show-error --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form \"chart=@genre-police-\$CHART_VERSION.tgz\" \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/stable/charts"
             )
             rules {
                 rule {
@@ -164,8 +163,7 @@ fun main() {
         job("helm-publish-release-candidate") {
             extends(helmBaseJob)
             script(
-                "curl -fs --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form \"chart=@genre-police-\$CHART_VERSION.tgz\" \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/dev/charts",
-                "curl -fs --user \$JFROG_USERNAME:\$JFROG_API_KEY -T genre-police-\$CHART_VERSION.tgz https://rbbl.jfrog.io/artifactory/gp-helm/\$CHART_VERSION.tgz"
+                "curl -fs --show-error --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form \"chart=@genre-police-\$CHART_VERSION.tgz\" \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/dev/charts"
             )
             rules {
                 rule {
