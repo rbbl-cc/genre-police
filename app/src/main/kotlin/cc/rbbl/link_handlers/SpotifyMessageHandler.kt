@@ -24,7 +24,13 @@ class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
             SPOTIFY_LINK_PATTERN.findAll(message).forEach {
                 val typeSlashId = it.value.split("?")[0].replace(SPOTIFY_DOMAIN, "")
                 try {
-                    val typeAndId = typeSlashId.split("/").toTypedArray()
+                    val typeAndId = typeSlashId.split("/").toTypedArray().let {typeAndId ->
+                        if(typeAndId.size == 3) {
+                            typeAndId.slice(1..2).toTypedArray()
+                        }else{
+                            typeAndId
+                        }
+                    }
                     if (typeAndId.size != 2) {
                         throw ParsingException()
                     }
@@ -86,7 +92,8 @@ class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
     }
 
     companion object {
-        internal val SPOTIFY_LINK_PATTERN = Regex("\\bhttps://open.spotify.com/(?:track|album|artist)[^ \\t\\n\\r]*\\b")
+        internal val SPOTIFY_LINK_PATTERN = Regex("\\b(?:https://open\\.spotify\\.com/[-a-zA-Z]*/?(?:track|album|artist)|https://spotify\\.link/)[^ \\t\\n\\r]*\\b")
+        internal val SPOTIFY_SHORT_LINK_PATTERN = Regex("https://spotify\\.link/[^ \\t\\n\\r]*")
         private const val SPOTIFY_DOMAIN = "https://open.spotify.com/"
     }
 }

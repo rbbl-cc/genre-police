@@ -74,4 +74,39 @@ internal class SpotifyMessageHandlerTest {
             SpotifyMessageHandler.SPOTIFY_LINK_PATTERN.matches("https://open.spotify.com/show/6KnaAHvqf0pgTs3Kw3qQTR")
         }
     }
+
+    @Test
+    fun `market track link`() {
+        assertTrue {
+            SpotifyMessageHandler.SPOTIFY_LINK_PATTERN.matches("https://open.spotify.com/intl-de/track/4awF9g7FMdeTxeD4OaSUIa?si=e6d6d7cc272c4873")
+        }
+    }
+
+    @Test
+    fun `market anonymous track link`() {
+        assertTrue {
+            SpotifyMessageHandler.SPOTIFY_LINK_PATTERN.matches("https://open.spotify.com/intl-de/track/4awF9g7FMdeTxeD4OaSUIa")
+        }
+    }
+
+    @Test
+    fun `short track link`() {
+        assertTrue {
+            SpotifyMessageHandler.SPOTIFY_LINK_PATTERN.matches("https://spotify.link/elxIFeXj2Ab")
+        }
+    }
+
+    @Test
+    fun `short track link against shortPatter`() {
+        assertTrue {
+            SpotifyMessageHandler.SPOTIFY_SHORT_LINK_PATTERN.matches("https://spotify.link/elxIFeXj2Ab")
+        }
+    }
+
+    @Test
+    fun `regular anonymous track link against shortPatter`() {
+        assertFalse {
+            SpotifyMessageHandler.SPOTIFY_SHORT_LINK_PATTERN.matches("https://open.spotify.com/track/2p4p9YGwmJIdf5IA9sSWhm")
+        }
+    }
 }
