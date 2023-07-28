@@ -71,9 +71,12 @@ fun main() {
         val dockerBuildJob = dockerBuildJob(
             "docker-build",
             gitlabCiSource,
-            dockerFile = "./app/Dockerfile"
+            dockerFile = "./app/Dockerfile",
+            executable = "podman"
         ) {
             stage = Stages.Build
+            image = ImageDsl("quay.io/podman/stable")
+            services = services()
             rules {
                 +Rules.dev
                 +Rules.master
@@ -85,9 +88,12 @@ fun main() {
         dockerMoveJob(
             "docker-publish-dev",
             gitlabCiSource,
-            Targets.DockerHubDev
+            Targets.DockerHubDev,
+            executable = "podman"
         ) {
             needs(dockerBuildJob)
+            image = ImageDsl("quay.io/podman/stable")
+            services = services()
             stage = Stages.Publish
             rules {
                 +Rules.dev
@@ -97,9 +103,12 @@ fun main() {
         dockerMoveJob(
             "docker-publish-master",
             gitlabCiSource,
-            Targets.DockerHubLatest
+            Targets.DockerHubLatest,
+            executable = "podman"
         ) {
             needs(dockerBuildJob)
+            image = ImageDsl("quay.io/podman/stable")
+            services = services()
             stage = Stages.Publish
             rules {
                 +Rules.master
@@ -109,18 +118,23 @@ fun main() {
         dockerMoveJob(
             "docker-publish-release-candidate",
             gitlabCiSource,
-            Targets.DockerHubTagged
+            Targets.DockerHubTagged,
+            executable = "podman"
         ) {
             needs(dockerBuildJob)
+            image = ImageDsl("quay.io/podman/stable")
+            services = services()
             stage = Stages.Publish
             rules {
                 +Rules.releaseCandidate
             }
         }
 
-        dockerMoveJob("docker-publish-release", gitlabCiSource, Targets.DockerHubTagged) {
+        dockerMoveJob("docker-publish-release", gitlabCiSource, Targets.DockerHubTagged, executable = "podman") {
             needs(dockerBuildJob)
             stage = Stages.Publish
+            image = ImageDsl("quay.io/podman/stable")
+            services = services()
             rules {
                 +Rules.release
             }
