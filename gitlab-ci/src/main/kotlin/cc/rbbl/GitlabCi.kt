@@ -1,7 +1,11 @@
 package cc.rbbl
 
 import cc.rbbl.gitlab_ci_kotlin_dsl_extensions.common_jobs.ciRenderCheckJob
-import cc.rbbl.gitlab_ci_kotlin_dsl_extensions.docker.*
+import cc.rbbl.gitlab_ci_kotlin_dsl_extensions.container_common.OciCredentials
+import cc.rbbl.gitlab_ci_kotlin_dsl_extensions.container_common.OciImage
+import cc.rbbl.gitlab_ci_kotlin_dsl_extensions.container_common.gitlabDockerCredentials
+import cc.rbbl.gitlab_ci_kotlin_dsl_extensions.podman.podmanBuildJob
+import cc.rbbl.gitlab_ci_kotlin_dsl_extensions.podman.podmanMoveJob
 import pcimcioch.gitlabci.dsl.gitlabCi
 import pcimcioch.gitlabci.dsl.job.ImageDsl
 import pcimcioch.gitlabci.dsl.job.createRule
@@ -31,14 +35,14 @@ object Rules {
     }
 }
 
-val gitlabCiSource = DockerImage("\$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA", gitlabDockerCredentials)
+val gitlabCiSource = OciImage("\$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA", gitlabDockerCredentials)
 
-val dockerHubCredentials = DockerCredentials("\$DOCKERHUB_USER", "\$DOCKERHUB_ACCESS_TOKEN")
+val dockerHubCredentials = OciCredentials("\$DOCKERHUB_USER", "\$DOCKERHUB_ACCESS_TOKEN")
 
 object Targets {
-    val DockerHubDev = DockerImage("rbbl/genre-police:dev", dockerHubCredentials)
-    val DockerHubLatest = DockerImage("rbbl/genre-police:latest", dockerHubCredentials)
-    val DockerHubTagged = DockerImage("rbbl/genre-police:\$CI_COMMIT_TAG", dockerHubCredentials)
+    val DockerHubDev = OciImage("rbbl/genre-police:dev", dockerHubCredentials)
+    val DockerHubLatest = OciImage("rbbl/genre-police:latest", dockerHubCredentials)
+    val DockerHubTagged = OciImage("rbbl/genre-police:\$CI_COMMIT_TAG", dockerHubCredentials)
 }
 
 const val gradleImage = "gradle:8.2.1"
@@ -68,15 +72,10 @@ fun main() {
             }
         }
 
-        val dockerBuildJob = dockerBuildJob(
-            "docker-build",
-            gitlabCiSource,
-            dockerFile = "./app/Dockerfile",
-            executable = "podman"
+        val dockerBuildJob = podmanBuildJob(
+            "podman-build", gitlabCiSource, dockerFile = "./app/Dockerfile"
         ) {
             stage = Stages.Build
-            image = ImageDsl("quay.io/podman/stable")
-            services = services()
             rules {
                 +Rules.dev
                 +Rules.master
@@ -85,56 +84,39 @@ fun main() {
             }
         }
 
-        dockerMoveJob(
-            "docker-publish-dev",
-            gitlabCiSource,
-            Targets.DockerHubDev,
-            executable = "podman"
+        podmanMoveJob(
+            "podman-publish-dev", gitlabCiSource, Targets.DockerHubDev
         ) {
             needs(dockerBuildJob)
-            image = ImageDsl("quay.io/podman/stable")
-            services = services()
             stage = Stages.Publish
             rules {
                 +Rules.dev
             }
         }
 
-        dockerMoveJob(
-            "docker-publish-master",
-            gitlabCiSource,
-            Targets.DockerHubLatest,
-            executable = "podman"
+        podmanMoveJob(
+            "podman-publish-master", gitlabCiSource, Targets.DockerHubLatest
         ) {
             needs(dockerBuildJob)
-            image = ImageDsl("quay.io/podman/stable")
-            services = services()
             stage = Stages.Publish
             rules {
                 +Rules.master
             }
         }
 
-        dockerMoveJob(
-            "docker-publish-release-candidate",
-            gitlabCiSource,
-            Targets.DockerHubTagged,
-            executable = "podman"
+        podmanMoveJob(
+            "podman-publish-release-candidate", gitlabCiSource, Targets.DockerHubTagged
         ) {
             needs(dockerBuildJob)
-            image = ImageDsl("quay.io/podman/stable")
-            services = services()
             stage = Stages.Publish
             rules {
                 +Rules.releaseCandidate
             }
         }
 
-        dockerMoveJob("docker-publish-release", gitlabCiSource, Targets.DockerHubTagged, executable = "podman") {
+        podmanMoveJob("podman-publish-release", gitlabCiSource, Targets.DockerHubTagged) {
             needs(dockerBuildJob)
             stage = Stages.Publish
-            image = ImageDsl("quay.io/podman/stable")
-            services = services()
             rules {
                 +Rules.release
             }

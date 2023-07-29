@@ -27,12 +27,10 @@
   - if: "$CI_PIPELINE_SOURCE =~ /^push$/"
   script:
   - "gradle check"
-"docker-build":
+"podman-build":
   image:
     name: "quay.io/podman/stable"
   stage: "build"
-  services:
-  - name: "docker:dind"
   rules:
   - if: "$CI_COMMIT_BRANCH =~ /^dev$/"
   - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
@@ -43,14 +41,12 @@
   - "podman build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA -f ./app/Dockerfile ."
   - "podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
   - "podman push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
-"docker-publish-dev":
+"podman-publish-dev":
   image:
     name: "quay.io/podman/stable"
   stage: "publish"
-  services:
-  - name: "docker:dind"
   needs:
-  - job: "docker-build"
+  - job: "podman-build"
   rules:
   - if: "$CI_COMMIT_BRANCH =~ /^dev$/"
   script:
@@ -59,14 +55,12 @@
   - "podman tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA rbbl/genre-police:dev"
   - "podman login -u $DOCKERHUB_USER -p $DOCKERHUB_ACCESS_TOKEN docker.io"
   - "podman push rbbl/genre-police:dev"
-"docker-publish-master":
+"podman-publish-master":
   image:
     name: "quay.io/podman/stable"
   stage: "publish"
-  services:
-  - name: "docker:dind"
   needs:
-  - job: "docker-build"
+  - job: "podman-build"
   rules:
   - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   script:
@@ -75,14 +69,12 @@
   - "podman tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA rbbl/genre-police:latest"
   - "podman login -u $DOCKERHUB_USER -p $DOCKERHUB_ACCESS_TOKEN docker.io"
   - "podman push rbbl/genre-police:latest"
-"docker-publish-release-candidate":
+"podman-publish-release-candidate":
   image:
     name: "quay.io/podman/stable"
   stage: "publish"
-  services:
-  - name: "docker:dind"
   needs:
-  - job: "docker-build"
+  - job: "podman-build"
   rules:
   - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && $CI_PIPELINE_SOURCE =~\
       \ /^push$/"
@@ -92,14 +84,12 @@
   - "podman tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA rbbl/genre-police:$CI_COMMIT_TAG"
   - "podman login -u $DOCKERHUB_USER -p $DOCKERHUB_ACCESS_TOKEN docker.io"
   - "podman push rbbl/genre-police:$CI_COMMIT_TAG"
-"docker-publish-release":
+"podman-publish-release":
   image:
     name: "quay.io/podman/stable"
   stage: "publish"
-  services:
-  - name: "docker:dind"
   needs:
-  - job: "docker-build"
+  - job: "podman-build"
   rules:
   - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && $CI_PIPELINE_SOURCE =~ /^push$/"
   script:
