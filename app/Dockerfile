@@ -1,4 +1,4 @@
-FROM docker.io/gradle:8.2.1 as Builder
+FROM docker.io/gradle:8.3.0 as Builder
 COPY . /app/
 WORKDIR /app/app
 RUN gradle build
