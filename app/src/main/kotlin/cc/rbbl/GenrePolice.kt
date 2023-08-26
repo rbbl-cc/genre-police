@@ -77,6 +77,9 @@ class GenrePolice(config: ProgramConfig) : ListenerAdapter(), Runnable {
 
     override fun onMessageReceived(event: MessageReceivedEvent) {
         val msg = event.message
+        if (msg.contentRaw.contains("genre", true)) {
+            return
+        }
         val responses = ArrayList<GenreResponse>()
         for (handler in messageHandlers) {
             responses.addAll(handler.getGenreResponses(msg.contentRaw))
