@@ -41,7 +41,6 @@ val dockerHubCredentials = OciCredentials("\$DOCKERHUB_USER", "\$DOCKERHUB_ACCES
 
 object Targets {
     val DockerHubDev = OciImage("rbbl/genre-police:dev", dockerHubCredentials)
-    val DockerHubLatest = OciImage("rbbl/genre-police:latest", dockerHubCredentials)
     val DockerHubTagged = OciImage("rbbl/genre-police:\$CI_COMMIT_TAG", dockerHubCredentials)
 }
 
@@ -95,16 +94,6 @@ fun main() {
         }
 
         podmanMoveJob(
-            "podman-publish-master", gitlabCiSource, Targets.DockerHubLatest
-        ) {
-            needs(dockerBuildJob)
-            stage = Stages.Publish
-            rules {
-                +Rules.master
-            }
-        }
-
-        podmanMoveJob(
             "podman-publish-release-candidate", gitlabCiSource, Targets.DockerHubTagged
         ) {
             needs(dockerBuildJob)
@@ -114,10 +103,23 @@ fun main() {
             }
         }
 
-        podmanMoveJob("podman-publish-release", gitlabCiSource, Targets.DockerHubTagged) {
+        val publishReleaseJob = podmanMoveJob("podman-publish-release", gitlabCiSource, Targets.DockerHubTagged) {
             needs(dockerBuildJob)
             stage = Stages.Publish
             rules {
+                +Rules.release
+            }
+        }
+
+        job("create-short-tags") {
+            stage = Stages.Publish
+            needs(publishReleaseJob)
+            image {
+                name = "rbbl/semtag:1"
+                entrypoint("/bin/bash", "-cl")
+            }
+            script("semtag -u \$DOCKERHUB_USER -p \$DOCKERHUB_ACCESS_TOKEN rbbl/semtag:\$CI_COMMIT_TAG")
+            rules{
                 +Rules.release
             }
         }
