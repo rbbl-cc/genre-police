@@ -1,11 +1,14 @@
 package cc.rbbl
 
-import cc.rbbl.exceptions.NoGenreFoundException
 import cc.rbbl.exceptions.ParsingException
 import cc.rbbl.link_handlers.SpotifyMessageHandler
 import cc.rbbl.persistence.MessageDao
 import cc.rbbl.persistence.MessageEntity
+import net.dv8tion.jda.api.entities.EmbedType
 import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.entities.MessageEmbed
+import net.dv8tion.jda.api.entities.MessageEmbed.Field
+import net.dv8tion.jda.api.entities.MessageEmbed.Footer
 import net.dv8tion.jda.api.events.*
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent
@@ -17,7 +20,7 @@ import net.dv8tion.jda.api.requests.ErrorResponse
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
-import java.util.stream.Collectors
+import java.time.OffsetDateTime
 import kotlin.system.exitProcess
 
 class GenrePolice(config: ProgramConfig) : ListenerAdapter(), Runnable {
@@ -80,12 +83,12 @@ class GenrePolice(config: ProgramConfig) : ListenerAdapter(), Runnable {
         if (msg.contentRaw.contains("genre", true)) {
             return
         }
-        val responses = ArrayList<GenreResponse>()
+        val responses = ArrayList<ResponseData>()
         for (handler in messageHandlers) {
             responses.addAll(handler.getGenreResponses(msg.contentRaw))
         }
-        if (responses.size > 0) {
-            msg.reply(responsesToMessage(responses)).queue { sendMessage: Message ->
+        metadataToEmbeds(responses).forEach {
+            msg.replyEmbeds(it).queue { sendMessage: Message ->
                 transaction {
                     MessageDao.new(sendMessage.idLong) {
                         sourceMessageId = msg.idLong
@@ -161,40 +164,75 @@ class GenrePolice(config: ProgramConfig) : ListenerAdapter(), Runnable {
         }
     }
 
-    private fun responsesToMessage(responseSet: List<GenreResponse>): String {
-        var message = "Following Genres were found:\n"
-        for ((title, genres, error) in responseSet.stream().distinct().collect(Collectors.toList())) {
-            message += "**$title**:"
-            if (error != null) {
-                message += when (error) {
-                    is NoGenreFoundException -> {
-                        " Spotify has no genre for that Item"
-                    }
+    private fun metadataToEmbeds(responseSet: List<ResponseData>): List<MessageEmbed> {
+        return responseSet.distinct().map { responseDataToMessageEmbed(it) }
+    }
 
-                    is IllegalArgumentException -> {
-                        " unknown ID"
-                    }
-
-                    is ParsingException -> {
-                        " broken Link"
-                    }
-
-                    else -> {
-                        " unknown Error"
-                    }
+    private fun responseDataToMessageEmbed(data: ResponseData): MessageEmbed {
+        if (data.error != null) {
+            val errorText = when (data.error) {
+                is IllegalArgumentException -> {
+                    "unknown ID"
                 }
-            } else {
-                for (genre in genres) {
-                    message += " \"$genre\""
+
+                is ParsingException -> {
+                    "broken Link"
                 }
-            }
-            message += "\n"
+
+                else -> {
+                    "unknown Error"
+                }
+            } + " for ${data.url}"
+            return MessageEmbed(
+                null, "Error", errorText, null, null, DEFAULT_EMBED_COLOR, null, null, null, null, null, null, null
+            )
         }
-        return message
+        return if (data.imageHeightAndWidth != null) {
+            MessageEmbed(
+                data.url,
+                data.title,
+                data.getDescription(),
+                EmbedType.RICH,
+                OffsetDateTime.now(),
+                DEFAULT_EMBED_COLOR,
+                MessageEmbed.Thumbnail(data.titleImageUrl, null, data.imageHeightAndWidth, data.imageHeightAndWidth),
+                null,
+                MessageEmbed.AuthorInfo(data.authors?.first(), data.authorUrl, data.authorImageUrl, null),
+                null,
+                DEFAULT_FOOTER,
+                null,
+                metadataToEmbedFields(data.metadata)
+            )
+        } else {
+            MessageEmbed(
+                data.url,
+                data.title,
+                data.getDescription(),
+                EmbedType.RICH,
+                OffsetDateTime.now(),
+                DEFAULT_EMBED_COLOR,
+                null,
+                null,
+                MessageEmbed.AuthorInfo(data.authors?.first(), data.authorUrl, data.authorImageUrl, null),
+                null,
+                DEFAULT_FOOTER,
+                null,
+                metadataToEmbedFields(data.metadata)
+            )
+        }
+    }
+
+    private fun metadataToEmbedFields(metadata: Map<String, List<String>>?): List<Field> {
+        if (metadata == null) {
+            return emptyList()
+        }
+        return metadata.map { Field(it.key, it.value.joinToString(), false, true) }
     }
 
     companion object {
         private const val DELETE_REACTION = "U+1f5d1"
         private const val RECONNECTION_TIMEOUT = 70000L
+        private const val DEFAULT_EMBED_COLOR = 15277667
+        private val DEFAULT_FOOTER = Footer("by rbbl.cc", null, null)
     }
 }

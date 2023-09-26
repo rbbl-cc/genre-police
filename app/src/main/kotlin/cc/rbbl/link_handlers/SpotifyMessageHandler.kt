@@ -1,9 +1,8 @@
 package cc.rbbl.link_handlers
 
-import cc.rbbl.GenreResponse
 import cc.rbbl.MessageHandler
 import cc.rbbl.ProgramConfig
-import cc.rbbl.exceptions.NoGenreFoundException
+import cc.rbbl.ResponseData
 import cc.rbbl.exceptions.ParsingException
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.spotifyAppApi
@@ -21,22 +20,22 @@ class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
         }
     }
 
-    override fun getGenreResponses(message: String): Set<GenreResponse> = runBlocking {
-        val results = HashSet<GenreResponse>()
+    override fun getGenreResponses(message: String): Set<ResponseData> = runBlocking {
+        val results = HashSet<ResponseData>()
         val longUrls =
             SPOTIFY_LONG_LINK_PATTERN.findAll(message).map { it.value } + SPOTIFY_SHORT_LINK_PATTERN.findAll(message)
                 .let {
                     val resolvedUrls = mutableListOf<String>()
                     for (match in it) {
                         val body = httpClient.get(match.value).bodyAsText()
-                        SPOTIFY_LONG_LINK_PATTERN.find(body)?.let {
-                            resolvedUrls.add(it.value)
+                        SPOTIFY_LONG_LINK_PATTERN.find(body)?.let { matchResult ->
+                            resolvedUrls.add(matchResult.value)
                         }
                     }
                     resolvedUrls
                 }
-        longUrls.forEach {
-            val typeAndId = extractTypeAndId(it)
+        longUrls.forEach { url ->
+            val typeAndId = extractTypeAndId(url)
             try {
                 if (typeAndId.size != 2) {
                     throw ParsingException()
@@ -47,61 +46,63 @@ class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
                     "artist" -> results.add(getGenresForArtist(typeAndId[1], null))
                 }
             } catch (e: Exception) {
-                when (e) {
-                    is NoGenreFoundException -> results.add(GenreResponse(e.itemName, listOf(), e))
-                    is IllegalArgumentException -> results.add(
-                        GenreResponse(
-                            "${typeAndId[0]}/${typeAndId[1]}",
-                            listOf(),
-                            e
-                        )
-                    )
-
-                    is ParsingException -> results.add(GenreResponse(it, listOf(), e))
-                    else -> results.add(GenreResponse(it, listOf(), e))
-                }
+                results.add(ResponseData(url = url, error = e))
             }
         }
         results
     }
 
-    private suspend fun getGenresForTrack(trackId: String): GenreResponse {
-        val track = spotifyApi.tracks.getTrack(trackId)
-        return if (track == null) {
-            throw IllegalArgumentException(trackId)
-        } else {
-            getGenresForAlbum(track.album.id, track.name)
-        }
+    private suspend fun getGenresForTrack(trackId: String): ResponseData {
+        val track = spotifyApi.tracks.getTrack(trackId) ?: throw IllegalArgumentException("Unknown track ID '$trackId'")
+        return getGenresForAlbum(
+            track.album.id, ResponseData(
+                url = track.externalUrls.spotify,
+                title = track.name,
+                titleImageUrl = track.album.images.lastOrNull()?.url,
+                imageHeightAndWidth = track.album.images.lastOrNull()?.width,
+                authorUrl = track.artists.firstOrNull()?.externalUrls?.spotify,
+                authors = track.artists.map { it.name },
+                authorImageUrl = track.artists.firstOrNull()?.toFullArtist()?.images?.first()?.url
+            )
+        )
     }
 
-    private suspend fun getGenresForAlbum(albumId: String, title: String?): GenreResponse {
-        val album = spotifyApi.albums.getAlbum(albumId)
-        return if (album == null) {
-            throw IllegalArgumentException(albumId)
+    private suspend fun getGenresForAlbum(albumId: String, prefilledData: ResponseData?): ResponseData {
+        val album = spotifyApi.albums.getAlbum(albumId) ?: throw IllegalArgumentException("Unknown album ID '$albumId'")
+        val data = prefilledData ?: ResponseData(
+            url = album.externalUrls.spotify,
+            title = album.name,
+            titleImageUrl = album.images.lastOrNull()?.url,
+            imageHeightAndWidth = album.images.lastOrNull()?.width,
+            authorUrl = album.artists.firstOrNull()?.externalUrls?.spotify,
+            authors = album.artists.map { it.name },
+            authorImageUrl = album.artists.firstOrNull()?.toFullArtist()?.images?.firstOrNull()?.url
+        )
+        return if (album.genres.isNotEmpty()) {
+            data.metadata["Genres"] = album.genres
+            data
         } else {
-            if (album.genres.isNotEmpty()) {
-                GenreResponse(title!!, album.genres.toList())
+            if (album.artists.isNotEmpty()) {
+                getGenresForArtist(album.artists.first().id, data)
             } else {
-                if (album.artists.isNotEmpty()) {
-                    getGenresForArtist(album.artists.first().id, title ?: album.name)
-                } else {
-                    throw UnknownError("albums always should have a artist. idk what happened")
-                }
+                throw UnknownError("albums always should have a artist. idk what happened")
             }
         }
     }
 
-    private suspend fun getGenresForArtist(artistId: String, title: String?): GenreResponse {
-        val artist = spotifyApi.artists.getArtist(artistId)
-        return if (artist == null) {
-            throw IllegalArgumentException("Unknown ID '$artistId'")
-        } else {
-            if (artist.genres.isNotEmpty()) {
-                GenreResponse(title ?: artist.name, artist.genres.toList())
-            } else {
-                throw NoGenreFoundException(title ?: artist.name)
-            }
+    private suspend fun getGenresForArtist(artistId: String, prefilledData: ResponseData?): ResponseData {
+        val artist =
+            spotifyApi.artists.getArtist(artistId) ?: throw IllegalArgumentException("Unknown artist ID '$artistId'")
+        val data = prefilledData ?: ResponseData(
+            url = artist.externalUrls.spotify,
+            title = artist.name,
+            titleImageUrl = artist.images.lastOrNull()?.url,
+            imageHeightAndWidth = artist.images.lastOrNull()?.width
+        )
+        if(artist.genres.isNotEmpty()){
+            data.metadata["Genres"] = artist.genres
         }
+        return data
     }
 
 
