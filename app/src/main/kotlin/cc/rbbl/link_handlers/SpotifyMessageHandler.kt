@@ -11,14 +11,11 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import kotlinx.coroutines.runBlocking
 
-class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
-    private var spotifyApi: SpotifyAppApi
-
-    init {
-        runBlocking {
-            spotifyApi = spotifyAppApi(config.spotifyClientId, config.spotifyClientSecret).build()
-        }
+class SpotifyMessageHandler(
+    config: ProgramConfig, private val spotifyApi: SpotifyAppApi = runBlocking {
+        spotifyAppApi(config.spotifyClientId, config.spotifyClientSecret).build()
     }
+) : MessageHandler {
 
     override fun getGenreResponses(message: String): Set<ResponseData> = runBlocking {
         val results = HashSet<ResponseData>()
@@ -90,7 +87,7 @@ class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
         }
     }
 
-    private suspend fun getGenresForArtist(artistId: String, prefilledData: ResponseData?): ResponseData {
+    internal suspend fun getGenresForArtist(artistId: String, prefilledData: ResponseData?): ResponseData {
         val artist =
             spotifyApi.artists.getArtist(artistId) ?: throw IllegalArgumentException("Unknown artist ID '$artistId'")
         val data = prefilledData ?: ResponseData(
@@ -99,7 +96,7 @@ class SpotifyMessageHandler(config: ProgramConfig) : MessageHandler {
             titleImageUrl = artist.images.lastOrNull()?.url,
             imageHeightAndWidth = artist.images.lastOrNull()?.width
         )
-        if(artist.genres.isNotEmpty()){
+        if (artist.genres.isNotEmpty()) {
             data.metadata["Genres"] = artist.genres
         }
         return data
