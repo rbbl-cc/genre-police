@@ -1,5 +1,6 @@
 package cc.rbbl.link_handlers
 
+import cc.rbbl.Artist
 import cc.rbbl.MessageHandler
 import cc.rbbl.ProgramConfig
 import cc.rbbl.ResponseData
@@ -57,9 +58,8 @@ class SpotifyMessageHandler(
                 title = track.name,
                 titleImageUrl = track.album.images.lastOrNull()?.url,
                 imageHeightAndWidth = track.album.images.lastOrNull()?.width,
-                authorUrl = track.artists.firstOrNull()?.externalUrls?.spotify,
-                authors = track.artists.map { it.name },
-                authorImageUrl = track.artists.firstOrNull()?.toFullArtist()?.images?.first()?.url
+                artists = track.artists.map { Artist(it.name, it.externalUrls.spotify) },
+                artistImageUrl = track.artists.firstOrNull()?.toFullArtist()?.images?.first()?.url
             )
         )
     }
@@ -71,9 +71,8 @@ class SpotifyMessageHandler(
             title = album.name,
             titleImageUrl = album.images.lastOrNull()?.url,
             imageHeightAndWidth = album.images.lastOrNull()?.width,
-            authorUrl = album.artists.firstOrNull()?.externalUrls?.spotify,
-            authors = album.artists.map { it.name },
-            authorImageUrl = album.artists.firstOrNull()?.toFullArtist()?.images?.firstOrNull()?.url
+            artists = album.artists.map { Artist(it.name, it.externalUrls.spotify) },
+            artistImageUrl = album.artists.firstOrNull()?.toFullArtist()?.images?.firstOrNull()?.url
         )
         return if (album.genres.isNotEmpty()) {
             data.metadata["Genres"] = album.genres

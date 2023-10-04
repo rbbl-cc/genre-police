@@ -5,16 +5,26 @@ data class ResponseData(
     val title: String? = null,
     val titleImageUrl: String? = null,
     val imageHeightAndWidth: Int? = null,
-    val authorUrl: String? = null,
-    val authors: List<String>? = null,
-    val authorImageUrl: String? = null,
-    val metadata: MutableMap<String,List<String>> = mutableMapOf(),
+    val artists: List<Artist>? = null,
+    val artistImageUrl: String? = null,
+    val metadata: MutableMap<String, List<String>> = mutableMapOf(),
     val error: Exception? = null
 ) {
     fun getDescription(): String? {
-        if (authors == null) {
+        if (artists == null || artists.size <= 1) {
             return null
         }
-        return authors.takeLast(authors.size-1).fold("feat. ") {acc, s -> "$acc$s, " }.trimEnd(',', ' ')
+        val additionalAuthors = artists.let {
+            it.takeLast(it.size - 1)
+        }
+        return additionalAuthors.fold("feat. ") { acc, s -> "$acc${s.toMarkdown()}, " }.trimEnd(',', ' ')
+    }
+}
+
+data class Artist(val name: String, val url: String? = null) {
+    fun toMarkdown(): String = if (url == null) {
+        name
+    } else {
+        "[$name]($url)"
     }
 }
