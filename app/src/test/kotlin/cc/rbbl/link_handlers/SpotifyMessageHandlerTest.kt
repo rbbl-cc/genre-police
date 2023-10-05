@@ -3,11 +3,11 @@ package cc.rbbl.link_handlers
 import cc.rbbl.ProgramConfig
 import cc.rbbl.ResponseData
 import com.adamratzman.spotify.SpotifyAppApi
+import com.adamratzman.spotify.models.Album
 import com.adamratzman.spotify.models.Artist
+import com.adamratzman.spotify.models.SimpleArtist
 import com.adamratzman.spotify.models.SpotifyImage
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.mockk
+import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Nested
@@ -162,14 +162,14 @@ internal class SpotifyMessageHandlerTest {
 
     @Nested
     inner class SpotifyClientBased {
-        private val artistUrl = "https://spotify.com/artist/test"
-        private val artistName = "testArtist"
-        private val artistTitleImageUrl = "https"
-        private val titleWidth = 100
-        private val genreList = listOf("genre1", "genre2")
 
         @Nested
         inner class GenresForArtists {
+            private val artistUrl = "https://spotify.com/artist/test"
+            private val artistName = "testArtist"
+            private val artistTitleImageUrl = "https"
+            private val titleWidth = 100
+            private val genreList = listOf("genre1", "genre2")
 
             private fun getDefaultArtist() = mockk<Artist>().also {
                 every { it.externalUrls.spotify } returns artistUrl
@@ -241,6 +241,123 @@ internal class SpotifyMessageHandlerTest {
                 assertEquals(ResponseData(
                     metadata = mutableMapOf("Genres" to genreList)
                 ), runBlocking { testee.getGenresForArtist("", ResponseData()) })
+            }
+        }
+
+        @Nested
+        inner class GenresForAlbums {
+            private val albumUrl = "https://spotify.com/album/test"
+            private val albumName = "testAlbum"
+            private val artistTitleImageUrl = "https"
+            private val titleWidth = 100
+            private val genreList = listOf("genre1", "genre2")
+            private val artistName = "ArtistName"
+            private val artistUrl = "https://spotify.com/artist/test"
+            private val artistId = "artistId"
+
+            private fun getDefaultAlbum() = mockk<Album>().also {
+                every { it.externalUrls.spotify } returns albumUrl
+                every { it.name } returns albumName
+                val imageMock = listOf(mockk<SpotifyImage>().also {
+                    every { it.url } returns artistTitleImageUrl
+                    every { it.width } returns titleWidth
+                })
+                every { it.images } returns imageMock
+                every { it.genres } returns emptyList()
+                every { it.artists } returns listOf(mockk<SimpleArtist>().also {
+                    every { it.id  } returns artistId
+                    every { it.name } returns artistName
+                    every { it.externalUrls.spotify } returns artistUrl
+                    coEvery { it.toFullArtist() } returns mockk<Artist>().also {
+                        every { it.images } returns emptyList()
+                    }
+                })
+            }
+
+            @Test
+            fun `wrong link`() = runTest {
+                val testee = SpotifyMessageHandler(mockk<ProgramConfig>(), mockk<SpotifyAppApi>().also {
+                    coEvery { it.albums.getAlbum(any()) } returns null
+                })
+                assertThrows<IllegalArgumentException> {
+                    runBlocking {
+                        testee.getGenresForAlbum("", null)
+                    }
+                }
+            }
+
+            @Test
+            fun `default album without without artists`() {
+                val testee = SpotifyMessageHandler(mockk<ProgramConfig>(), mockk<SpotifyAppApi>().also {
+                    coEvery { it.albums.getAlbum(any()) } returns getDefaultAlbum().also {
+                        coEvery { it.artists } returns emptyList()
+                    }
+                })
+                assertThrows<UnknownError>(message = "albums always should have a artist. idk what happened") {
+                    runBlocking {
+                        testee.getGenresForAlbum(
+                            "",
+                            null
+                        )
+                    }
+                }
+            }
+
+            @Test
+            fun `default album without prefilled data`() {
+                val testee = spyk(SpotifyMessageHandler(mockk<ProgramConfig>(), mockk<SpotifyAppApi>().also {
+                    coEvery { it.albums.getAlbum(any()) } returns getDefaultAlbum()
+                })).also {
+                    coEvery {it.getGenresForArtist(any(), any())} returnsArgument(1)
+                }
+                assertEquals(ResponseData(
+                    url = albumUrl,
+                    title = albumName,
+                    titleImageUrl = artistTitleImageUrl,
+                    imageHeightAndWidth = titleWidth,
+                    artists = listOf(cc.rbbl.Artist(name = artistName, url = artistUrl))
+                ), runBlocking { testee.getGenresForAlbum("", null) })
+                coVerify(exactly = 1) { testee.getGenresForArtist(any(), any()) }
+            }
+
+            @Test
+            fun `genre album without prefilled data`() {
+                val testee = SpotifyMessageHandler(mockk<ProgramConfig>(), mockk<SpotifyAppApi>().also {
+                    coEvery { it.albums.getAlbum(any()) } returns getDefaultAlbum().also {
+                        every { it.genres } returns genreList
+                    }
+                })
+                assertEquals(ResponseData(
+                    url = albumUrl,
+                    title = albumName,
+                    titleImageUrl = artistTitleImageUrl,
+                    imageHeightAndWidth = titleWidth,
+                    artists = listOf(cc.rbbl.Artist(artistName, artistUrl)),
+                    metadata = mutableMapOf("Genres" to genreList)
+                ), runBlocking { testee.getGenresForAlbum("", null) })
+            }
+
+            @Test
+            fun `default album with prefilled data`() {
+                val testee = spyk(SpotifyMessageHandler(mockk<ProgramConfig>(), mockk<SpotifyAppApi>().also {
+                    coEvery { it.albums.getAlbum(any()) } returns getDefaultAlbum()
+                })).also {
+                    coEvery { it.getGenresForArtist(any(), any()) } returnsArgument(1)
+                }
+                assertEquals(ResponseData(), runBlocking { testee.getGenresForAlbum("", ResponseData()) })
+                coVerify(exactly = 1) { testee.getGenresForArtist(any(), any()) }
+            }
+
+            @Test
+            fun `genre album with prefilled data`() {
+                val testee = SpotifyMessageHandler(mockk<ProgramConfig>(), mockk<SpotifyAppApi>().also {
+                    coEvery { it.albums.getAlbum(any()) } returns getDefaultAlbum().also {
+                        every { it.genres } returns genreList
+                    }
+                })
+                assertEquals(ResponseData(
+                    metadata = mutableMapOf("Genres" to genreList)
+                ), runBlocking { testee.getGenresForAlbum("", ResponseData()) })
             }
         }
     }

@@ -64,7 +64,7 @@ class SpotifyMessageHandler(
         )
     }
 
-    private suspend fun getGenresForAlbum(albumId: String, prefilledData: ResponseData?): ResponseData {
+    internal suspend fun getGenresForAlbum(albumId: String, prefilledData: ResponseData?): ResponseData {
         val album = spotifyApi.albums.getAlbum(albumId) ?: throw IllegalArgumentException("Unknown album ID '$albumId'")
         val data = prefilledData ?: ResponseData(
             url = album.externalUrls.spotify,
