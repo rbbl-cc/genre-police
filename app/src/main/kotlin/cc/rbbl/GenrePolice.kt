@@ -145,7 +145,10 @@ class GenrePolice(config: ProgramConfig) : ListenerAdapter(), Runnable {
         if (event.name == statusCommand) {
             event.deferReply().queue() // Tell discord we received the command, send a thinking... message to the user
             val result = StatsRepository.getStats()
-            event.hook.sendMessage("**Servers**: ${result.serverCount}\n**Messages**: ${result.messageCount}").queue()
+            event.hook.sendMessage(
+                """**Servers**: ${result.serverCount}
+                   **Messages**: ${result.messageCount}
+                   **Version**: ${result.appVersion}""".trimIndent()).queue()
         }
     }
 
