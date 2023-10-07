@@ -34,7 +34,8 @@
       \ /^web$/"
   - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && $CI_PIPELINE_SOURCE =~ /^web$/"
   script:
-  - "podman build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA -f ./app/Dockerfile ."
+  - "podman build --build-arg \"CI_COMMIT_TAG=$CI_COMMIT_TAG\" -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA\
+    \ -f ./app/Dockerfile ."
   - "podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
   - "podman push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
 "podman-publish-dev":
