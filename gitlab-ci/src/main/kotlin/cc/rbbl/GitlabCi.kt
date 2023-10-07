@@ -30,9 +30,6 @@ object Rules {
     val release = createRule {
         ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^web$/"
     }
-    val onPush = createRule {
-        ifCondition = "\$CI_PIPELINE_SOURCE =~ /^push\$/"
-    }
 }
 
 val gitlabCiSource = OciImage("\$CI_REGISTRY_IMAGE:\$CI_COMMIT_SHORT_SHA", gitlabDockerCredentials)
@@ -54,20 +51,13 @@ fun main() {
             +Stages.Release
         }
 
-        ciRenderCheckJob("checkCiRender", path = ".gitlab-ci-generated.yml", image = gradleImage) {
-            rules {
-                +Rules.onPush
-            }
-        }
+        ciRenderCheckJob("checkCiRender", path = ".gitlab-ci-generated.yml", image = gradleImage)
 
         job("test") {
             stage = Stages.Test
             image = ImageDsl(gradleImage)
             script {
                 +"gradle check"
-            }
-            rules {
-                +Rules.onPush
             }
         }
 
