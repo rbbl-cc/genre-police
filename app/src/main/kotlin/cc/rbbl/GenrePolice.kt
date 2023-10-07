@@ -146,9 +146,12 @@ class GenrePolice(config: ProgramConfig) : ListenerAdapter(), Runnable {
             event.deferReply().queue() // Tell discord we received the command, send a thinking... message to the user
             val result = StatsRepository.getStats()
             event.hook.sendMessage(
-                """**Servers**: ${result.serverCount}
-                   **Messages**: ${result.messageCount}
-                   **Version**: ${result.appVersion}""".trimIndent()).queue()
+                """
+                **Servers**: ${result.serverCount}
+                **Messages**: ${result.messageCount}
+                **Version**: ${result.appVersion}
+                """.trimIndent()
+            ).queue()
         }
     }
 
@@ -200,7 +203,9 @@ class GenrePolice(config: ProgramConfig) : ListenerAdapter(), Runnable {
                 DEFAULT_EMBED_COLOR,
                 MessageEmbed.Thumbnail(data.titleImageUrl, null, data.imageHeightAndWidth, data.imageHeightAndWidth),
                 null,
-                MessageEmbed.AuthorInfo(data.artists?.firstOrNull()?.name, data.artists?.firstOrNull()?.url, data.artistImageUrl, null),
+                MessageEmbed.AuthorInfo(
+                    data.artists?.firstOrNull()?.name, data.artists?.firstOrNull()?.url, data.artistImageUrl, null
+                ),
                 null,
                 DEFAULT_FOOTER,
                 null,
@@ -216,7 +221,9 @@ class GenrePolice(config: ProgramConfig) : ListenerAdapter(), Runnable {
                 DEFAULT_EMBED_COLOR,
                 null,
                 null,
-                MessageEmbed.AuthorInfo(data.artists?.firstOrNull()?.name, data.artists?.firstOrNull()?.url, data.artistImageUrl, null),
+                MessageEmbed.AuthorInfo(
+                    data.artists?.firstOrNull()?.name, data.artists?.firstOrNull()?.url, data.artistImageUrl, null
+                ),
                 null,
                 DEFAULT_FOOTER,
                 null,
