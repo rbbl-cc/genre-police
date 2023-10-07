@@ -41,7 +41,7 @@ object Targets {
     val DockerHubTagged = OciImage("rbbl/genre-police:\$CI_COMMIT_TAG", dockerHubCredentials)
 }
 
-const val gradleImage = "gradle:8.2.1"
+const val gradleImage = "gradle:8.4.0"
 fun main() {
     gitlabCi(validate = true, "../.gitlab-ci-generated.yml") {
         stages {

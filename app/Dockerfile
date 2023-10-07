@@ -1,4 +1,4 @@
-FROM docker.io/gradle:8.3.0 as Builder
+FROM docker.io/gradle:8.4.0 as Builder
 COPY . /app/
 ARG CI_COMMIT_TAG
 ENV CI_COMMIT_TAG $CI_COMMIT_TAG

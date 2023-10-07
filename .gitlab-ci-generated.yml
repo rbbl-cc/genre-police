@@ -5,7 +5,7 @@
 - "release"
 "checkCiRender":
   image:
-    name: "gradle:8.2.1"
+    name: "gradle:8.4.0"
   script:
   - "export OLD=$(cat .gitlab-ci-generated.yml)"
   - "gradle renderCi"
@@ -19,7 +19,7 @@
   - "./compare_script.sh"
 "test":
   image:
-    name: "gradle:8.2.1"
+    name: "gradle:8.4.0"
   stage: "test"
   script:
   - "gradle check"
