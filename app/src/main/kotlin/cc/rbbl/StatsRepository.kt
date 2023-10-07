@@ -1,5 +1,6 @@
 package cc.rbbl
 
+import cc.rbbl.app.BuildConfig
 import cc.rbbl.persistence.MessageDao
 import kotlinx.serialization.Serializable
 import net.dv8tion.jda.api.JDA
@@ -35,4 +36,4 @@ class StatsRepository {
 }
 
 @Serializable
-data class StatsResult(val serverCount: Int, val messageCount: Long)
+data class StatsResult(val serverCount: Int, val messageCount: Long, val appVersion: String = BuildConfig.APP_VERSION)

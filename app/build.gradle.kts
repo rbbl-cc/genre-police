@@ -5,10 +5,11 @@ plugins {
     kotlin("plugin.serialization") version "1.9.0"
     application
     id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.github.gmazzo.buildconfig") version "4.1.2"
 }
 
 group = "cc.rbbl"
-version = "1.6.0"
+version = System.getenv("CI_COMMIT_TAG") ?: "0.0.1-RC1"
 
 repositories {
     mavenCentral()
@@ -66,6 +67,10 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("io.mockk:mockk:1.13.8")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
+}
+
+buildConfig {
+    buildConfigField("String", "APP_VERSION", provider { "\"${project.version}\"" })
 }
 
 tasks.getByName<Test>("test") {

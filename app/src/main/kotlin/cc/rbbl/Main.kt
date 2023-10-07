@@ -9,6 +9,7 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -45,7 +46,7 @@ fun main(args: Array<String>) {
     StatsRepository.jda = jda
 
     if (config.webserverEnabled) {
-        runBlocking {
+        runBlocking(Dispatchers.Default) {
             launch {
                 transaction {
                     HealthAttributes.database = !connection.isClosed
