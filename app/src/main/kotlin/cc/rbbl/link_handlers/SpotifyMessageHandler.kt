@@ -50,7 +50,7 @@ class SpotifyMessageHandler(
         results
     }
 
-    private suspend fun getGenresForTrack(trackId: String): ResponseData {
+    internal suspend fun getGenresForTrack(trackId: String): ResponseData {
         val track = spotifyApi.tracks.getTrack(trackId) ?: throw IllegalArgumentException("Unknown track ID '$trackId'")
         return getGenresForAlbum(
             track.album.id, ResponseData(
@@ -59,7 +59,7 @@ class SpotifyMessageHandler(
                 titleImageUrl = track.album.images.lastOrNull()?.url,
                 imageHeightAndWidth = track.album.images.lastOrNull()?.width,
                 artists = track.artists.map { Artist(it.name, it.externalUrls.spotify) },
-                artistImageUrl = track.artists.firstOrNull()?.toFullArtist()?.images?.first()?.url
+                artistImageUrl = track.artists.firstOrNull()?.toFullArtist()?.images?.firstOrNull()?.url
             )
         )
     }

@@ -3,10 +3,7 @@ package cc.rbbl.link_handlers
 import cc.rbbl.ProgramConfig
 import cc.rbbl.ResponseData
 import com.adamratzman.spotify.SpotifyAppApi
-import com.adamratzman.spotify.models.Album
-import com.adamratzman.spotify.models.Artist
-import com.adamratzman.spotify.models.SimpleArtist
-import com.adamratzman.spotify.models.SpotifyImage
+import com.adamratzman.spotify.models.*
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -358,6 +355,60 @@ internal class SpotifyMessageHandlerTest {
                 assertEquals(ResponseData(
                     metadata = mutableMapOf("Genres" to genreList)
                 ), runBlocking { testee.getGenresForAlbum("", ResponseData()) })
+            }
+        }
+
+        @Nested
+        inner class GenresForTracks {
+            private val trackUrl = "trackUrl"
+            private val trackName = "testTrack"
+            private val artistName = "ArtistName"
+            private val artistUrl = "https://spotify.com/artist/test"
+            private val artistId = "artistId"
+            private val simpleAlbum = mockk<SimpleAlbum>().also {
+                every { it.id } returns "albumId"
+                every { it.images } returns emptyList()
+            }
+
+            private fun getDefaultTrack() = mockk<Track>().also {
+                every { it.externalUrls.spotify } returns trackUrl
+                every { it.name } returns trackName
+                every { it.album } returns simpleAlbum
+                every { it.artists } returns listOf(mockk<SimpleArtist>().also {
+                    every { it.id  } returns artistId
+                    every { it.name } returns artistName
+                    every { it.externalUrls.spotify } returns artistUrl
+                    coEvery { it.toFullArtist() } returns mockk<Artist>().also {
+                        every { it.images } returns emptyList()
+                    }
+                })
+            }
+
+            @Test
+            fun `wrong link`() = runTest {
+                val testee = SpotifyMessageHandler(mockk<ProgramConfig>(), mockk<SpotifyAppApi>().also {
+                    coEvery { it.tracks.getTrack(any()) } returns null
+                })
+                assertThrows<IllegalArgumentException> {
+                    runBlocking {
+                        testee.getGenresForTrack("")
+                    }
+                }
+            }
+
+            @Test
+            fun `valid input`() {
+                val testee = spyk(SpotifyMessageHandler(mockk<ProgramConfig>(), mockk<SpotifyAppApi>().also {
+                    coEvery { it.tracks.getTrack(any()) } returns getDefaultTrack()
+                })).also {
+                    coEvery {it.getGenresForAlbum(any(), any())} returnsArgument(1)
+                }
+                assertEquals(ResponseData(
+                    url = trackUrl,
+                    title = trackName,
+                    artists = listOf(cc.rbbl.Artist(name = artistName, url = artistUrl))
+                ), runBlocking { testee.getGenresForTrack("") })
+                coVerify(exactly = 1) { testee.getGenresForAlbum(any(), any()) }
             }
         }
     }
