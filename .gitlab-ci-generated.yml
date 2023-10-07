@@ -93,7 +93,7 @@
   rules:
   - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && $CI_PIPELINE_SOURCE =~ /^web$/"
   script:
-  - "semtag -u $DOCKERHUB_USER -p $DOCKERHUB_ACCESS_TOKEN rbbl/semtag:$CI_COMMIT_TAG"
+  - "semtag -u $DOCKERHUB_USER -p $DOCKERHUB_ACCESS_TOKEN rbbl/genre-police:$CI_COMMIT_TAG"
 ".helm":
   image:
     name: "fedora"

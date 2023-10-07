@@ -108,7 +108,7 @@ fun main() {
                 name = "rbbl/semtag:1"
                 entrypoint("/bin/bash", "-cl")
             }
-            script("semtag -u \$DOCKERHUB_USER -p \$DOCKERHUB_ACCESS_TOKEN rbbl/semtag:\$CI_COMMIT_TAG")
+            script("semtag -u \$DOCKERHUB_USER -p \$DOCKERHUB_ACCESS_TOKEN ${Targets.DockerHubTagged.imageTag}")
             rules{
                 +Rules.release
             }
