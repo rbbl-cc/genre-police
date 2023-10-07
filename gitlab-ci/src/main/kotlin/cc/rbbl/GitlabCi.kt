@@ -25,10 +25,10 @@ object Rules {
         ifCondition = "\$CI_COMMIT_BRANCH == \$CI_DEFAULT_BRANCH"
     }
     val releaseCandidate = createRule {
-        ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^push$/"
+        ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^web$/"
     }
     val release = createRule {
-        ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^push$/"
+        ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^web$/"
     }
     val onPush = createRule {
         ifCondition = "\$CI_PIPELINE_SOURCE =~ /^push\$/"
@@ -152,9 +152,7 @@ fun main() {
                 "curl -fs --show-error --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form \"chart=@genre-police-\$CHART_VERSION.tgz\" \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/stable/charts"
             )
             rules {
-                rule {
-                    ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^web$/"
-                }
+                +Rules.release
             }
         }
 
@@ -164,9 +162,7 @@ fun main() {
                 "curl -fs --show-error --request POST --user gitlab-ci-token:\$CI_JOB_TOKEN --form \"chart=@genre-police-\$CHART_VERSION.tgz\" \${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/packages/helm/api/dev/charts"
             )
             rules {
-                rule {
-                    ifCondition = "\$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && \$CI_PIPELINE_SOURCE =~ /^web$/"
-                }
+                +Rules.releaseCandidate
             }
         }
 
