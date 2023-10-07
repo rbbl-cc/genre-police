@@ -61,8 +61,8 @@ fun main() {
             }
         }
 
-        val dockerBuildJob = podmanBuildJob(
-            "podman-build", gitlabCiSource, dockerFile = "./app/Dockerfile"
+        val podmanBuild = podmanBuildJob(
+            "podman-build", gitlabCiSource, dockerFile = "./app/Dockerfile", buildCommand = "build --build-arg \"CI_COMMIT_TAG=\$CI_COMMIT_TAG\""
         ) {
             stage = Stages.Build
             rules {
@@ -76,7 +76,7 @@ fun main() {
         podmanMoveJob(
             "podman-publish-dev", gitlabCiSource, Targets.DockerHubDev
         ) {
-            needs(dockerBuildJob)
+            needs(podmanBuild)
             stage = Stages.Publish
             rules {
                 +Rules.dev
@@ -86,7 +86,7 @@ fun main() {
         podmanMoveJob(
             "podman-publish-release-candidate", gitlabCiSource, Targets.DockerHubTagged
         ) {
-            needs(dockerBuildJob)
+            needs(podmanBuild)
             stage = Stages.Publish
             rules {
                 +Rules.releaseCandidate
@@ -94,7 +94,7 @@ fun main() {
         }
 
         val publishReleaseJob = podmanMoveJob("podman-publish-release", gitlabCiSource, Targets.DockerHubTagged) {
-            needs(dockerBuildJob)
+            needs(podmanBuild)
             stage = Stages.Publish
             rules {
                 +Rules.release
