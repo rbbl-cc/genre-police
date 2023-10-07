@@ -8,6 +8,9 @@
     name: "gradle:8.2.1"
   rules:
   - if: "$CI_PIPELINE_SOURCE =~ /^push$/"
+  - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && $CI_PIPELINE_SOURCE =~ /^web$/"
+  - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && $CI_PIPELINE_SOURCE =~\
+      \ /^web$/"
   script:
   - "export OLD=$(cat .gitlab-ci-generated.yml)"
   - "gradle renderCi"
@@ -25,6 +28,9 @@
   stage: "test"
   rules:
   - if: "$CI_PIPELINE_SOURCE =~ /^push$/"
+  - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+$/ && $CI_PIPELINE_SOURCE =~ /^web$/"
+  - if: "$CI_COMMIT_TAG =~ /^\\d+\\.\\d+\\.\\d+-RC\\d+$/ && $CI_PIPELINE_SOURCE =~\
+      \ /^web$/"
   script:
   - "gradle check"
 "podman-build":

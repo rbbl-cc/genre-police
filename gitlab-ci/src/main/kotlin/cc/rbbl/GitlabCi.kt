@@ -57,6 +57,8 @@ fun main() {
         ciRenderCheckJob("checkCiRender", path = ".gitlab-ci-generated.yml", image = gradleImage) {
             rules {
                 +Rules.onPush
+                +Rules.release
+                +Rules.releaseCandidate
             }
         }
 
@@ -68,6 +70,8 @@ fun main() {
             }
             rules {
                 +Rules.onPush
+                +Rules.release
+                +Rules.releaseCandidate
             }
         }
 
