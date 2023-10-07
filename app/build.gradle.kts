@@ -9,7 +9,13 @@ plugins {
 }
 
 group = "cc.rbbl"
-version = System.getenv("CI_COMMIT_TAG") ?: "0.0.1-RC1"
+version = System.getenv("CI_COMMIT_TAG").let {
+    if (it.isNullOrBlank()) {
+        "0.0.1-RC1"
+    }else{
+        it
+    }
+}
 
 repositories {
     mavenCentral()
