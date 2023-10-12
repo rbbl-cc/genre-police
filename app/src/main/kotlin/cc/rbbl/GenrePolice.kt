@@ -102,6 +102,9 @@ class GenrePolice(config: ProgramConfig) : ListenerAdapter(), Runnable {
     }
 
     override fun onMessageReactionAdd(event: MessageReactionAddEvent) {
+        if(event.reaction.reactionEmote.isEmote) {
+            return
+        }
         if (event.reaction.reactionEmote.asCodepoints == DELETE_REACTION) {
             val entity = transaction {
                 MessageDao.findById(event.messageIdLong)
