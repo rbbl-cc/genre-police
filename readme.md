@@ -6,7 +6,7 @@ genre-police is a discord bot, that posts the genres to spotify links that are p
 
 ## usage
 
-[invite](https://discord.com/oauth2/authorize?client_id=795331174649430016&permissions=0&scope=bot)
+[invite](https://discord.com/oauth2/authorize?client_id=795331174649430016&permissions=18496&scope=bot+applications.commands)
 
 just send spotify links in any channel or via dm and the bot will answer with the genres. this only works for `tracks`
 , `albums` and `artists`.
