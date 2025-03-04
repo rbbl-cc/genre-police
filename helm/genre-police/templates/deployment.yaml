@@ -50,6 +50,8 @@ spec:
             - name: DB_PASSWORD
               value: {{ quote .Values.global.postgresql.auth.password }}
             {{ end }}
+          startupProbe:
+            initialDelaySeconds: 5
           readinessProbe:
             httpGet:
               port: 80
