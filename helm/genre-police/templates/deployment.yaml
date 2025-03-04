@@ -51,7 +51,9 @@ spec:
               value: {{ quote .Values.global.postgresql.auth.password }}
             {{ end }}
           startupProbe:
-            initialDelaySeconds: 5
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 18
             httpGet:
               port: 80
               path: readyz
