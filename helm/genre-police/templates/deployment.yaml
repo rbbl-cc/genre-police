@@ -52,6 +52,9 @@ spec:
             {{ end }}
           startupProbe:
             initialDelaySeconds: 5
+            httpGet:
+              port: 80
+              path: readyz
           readinessProbe:
             httpGet:
               port: 80
